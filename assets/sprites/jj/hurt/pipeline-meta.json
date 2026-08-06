@@ -1,0 +1,8 @@
+{
+  "mode": "hurt",
+  "rows": 2,
+  "cols": 2,
+  "cell_size": 128,
+  "frame_labels": ["hurt-1", "hurt-2", "hurt-3", "hurt-4"],
+  "source": "sprites/jj/hurt/pipeline-meta.json"
+}
