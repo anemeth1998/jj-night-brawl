@@ -1,0 +1,42 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode user data / build products
+xcuserdata/
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+DerivedData/
+build/
+Build/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Packages/
+Package.resolved
+
+# CocoaPods / Carthage (if ever added)
+Pods/
+Carthage/Build/
+
+# Local backups / agent junk
+*.bak
+*.bak-*
+*.orig
+*.swp
+*~
+
+# Python
+__pycache__/
+*.pyc
+
+# Icon install scratch (keep scripts, not status noise)
+icon_install_status.txt
