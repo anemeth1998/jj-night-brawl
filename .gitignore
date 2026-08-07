@@ -40,3 +40,6 @@ __pycache__/
 
 # Icon install scratch (keep scripts, not status noise)
 icon_install_status.txt
+
+# Local helper binaries
+tools/
