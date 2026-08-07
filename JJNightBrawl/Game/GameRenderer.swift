@@ -484,14 +484,14 @@ enum GameRenderer {
             nextY += 28
         }
 
-        // Score
+        // Score / wave — sit below SwiftUI SOUND/PAUSE chips (top-right overlay ~48pt tall).
         let scoreStr = "\(state.score)" as NSString
         let scoreAttrs: [NSAttributedString.Key: Any] = [
             .font: UIFont.boldSystemFont(ofSize: 18),
             .foregroundColor: UIColor(red: 0.96, green: 0.93, blue: 0.97, alpha: 1)
         ]
         let scoreSize = scoreStr.size(withAttributes: scoreAttrs)
-        scoreStr.draw(at: CGPoint(x: viewW - 20 - scoreSize.width, y: 16), withAttributes: scoreAttrs)
+        scoreStr.draw(at: CGPoint(x: viewW - 20 - scoreSize.width, y: 56), withAttributes: scoreAttrs)
 
         let waveStr = "WAVE \(state.wave)/\(state.maxWaves)" as NSString
         let waveAttrs: [NSAttributedString.Key: Any] = [
@@ -499,7 +499,7 @@ enum GameRenderer {
             .foregroundColor: UIColor(red: 0.66, green: 0.61, blue: 0.72, alpha: 1)
         ]
         let waveSize = waveStr.size(withAttributes: waveAttrs)
-        waveStr.draw(at: CGPoint(x: viewW - 20 - waveSize.width, y: 40), withAttributes: waveAttrs)
+        waveStr.draw(at: CGPoint(x: viewW - 20 - waveSize.width, y: 80), withAttributes: waveAttrs)
 
         if p.combo > 1 {
             let c = "\(p.combo) HIT COMBO" as NSString

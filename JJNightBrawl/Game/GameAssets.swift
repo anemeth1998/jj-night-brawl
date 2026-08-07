@@ -169,18 +169,30 @@ final class GameAssets {
             self.ready = isReady
         }
 
+        // Always publish on main; never main.sync from a background loader (deadlock risk
+        // if the main queue is waiting on asset work or UIKit is mid-update).
         if Thread.isMainThread {
             publish()
         } else {
-            DispatchQueue.main.sync(execute: publish)
+            DispatchQueue.main.async(execute: publish)
         }
     }
 
-    /// Background load; `onDone` always on main (after `ready` is published).
+    /// Async load. Image catalog access + publish run on main; heavy chroma-key stays off
+    /// the first paint by yielding one runloop turn first.
     func loadAsync(onDone: @escaping () -> Void) {
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            self?.load()
-            DispatchQueue.main.async { onDone() }
+        // UIImage(named:) is most reliable on the main thread (esp. Simulator / asset catalogs).
+        DispatchQueue.main.async { [weak self] in
+            guard let self else {
+                onDone()
+                return
+            }
+            // Yield so the first black frame / chrome can appear before sheet work.
+            DispatchQueue.main.async {
+                self.load()
+                // load() publishes async when not already on main — but we are on main, so ready now.
+                onDone()
+            }
         }
     }
 

@@ -35,10 +35,34 @@ final class GameCanvasUIView: UIView {
 
         // Load assets off the main thread (chroma-key on large sheets used to block launch).
         assets.loadAsync { [weak self] in
-            self?.setNeedsDisplay()
+            guard let self else { return }
+            self.setNeedsDisplay()
+            self.maybeAutoStartAfterAssetsReady()
         }
         engine.audio.unlock()
         installLifecycleObservers()
+    }
+
+    /// Sim/automation: pass launch arg `-JJAutoStart` (or env `JJ_AUTO_START=1`) to enter combat
+    /// after assets load — same path as START BRAWL, for headless freeze checks.
+    private func maybeAutoStartAfterAssetsReady() {
+        let args = ProcessInfo.processInfo.arguments
+        let env = ProcessInfo.processInfo.environment
+        let want = args.contains("-JJAutoStart")
+            || env["JJ_AUTO_START"] == "1"
+            || env["JJ_AUTO_START"]?.lowercased() == "true"
+        guard want else { return }
+        // One frame of title first so layout/HUD settle like a real tap.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
+            guard let self else { return }
+            let ph = self.engine.state.phase
+            guard ph == .title || ph == .gameover || ph == .victory else { return }
+            print("[JJ] auto-start → startGame (phase was \(ph.rawValue))")
+            self.engine.audio.unlock()
+            self.engine.startGame()
+            self.engine.clearTouch()
+            _ = self.becomeFirstResponder()
+        }
     }
 
     required init?(coder: NSCoder) {
@@ -398,7 +422,10 @@ struct ContentView: View {
     }
 
     private var topBar: some View {
-        HStack {
+        // Keep chips on the RIGHT so they do not cover the canvas-drawn HEALTH / RIFF meters (left).
+        HStack(spacing: 10) {
+            Spacer()
+                .allowsHitTesting(false)
             if phase == .playing || phase == .paused {
                 TouchChip(
                     title: phase == .paused ? "RESUME" : "PAUSE",
@@ -408,8 +435,6 @@ struct ContentView: View {
                     bridge.engine?.togglePause()
                 }
             }
-            Spacer()
-                .allowsHitTesting(false)
             TouchChip(
                 title: muted ? "SOUND OFF" : "SOUND ON",
                 color: Color.white.opacity(0.12)

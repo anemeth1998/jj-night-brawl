@@ -26,6 +26,7 @@ struct JJNightBrawlApp: App {
         WindowGroup {
             ContentView()
                 .preferredColorScheme(.dark)
+                .background(Color.black)
         }
     }
 }
