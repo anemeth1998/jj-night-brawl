@@ -178,21 +178,23 @@ final class GameAssets {
         }
     }
 
-    /// Async load. Image catalog access + publish run on main; heavy chroma-key stays off
-    /// the first paint by yielding one runloop turn first.
+    /// Async load on the main queue (UIImage(named:) + catalog are main-safe).
+    /// Single hop so title/combat can paint within ~1–2 runloop turns after appear.
     func loadAsync(onDone: @escaping () -> Void) {
-        // UIImage(named:) is most reliable on the main thread (esp. Simulator / asset catalogs).
-        DispatchQueue.main.async { [weak self] in
+        let work = { [weak self] in
             guard let self else {
                 onDone()
                 return
             }
-            // Yield so the first black frame / chrome can appear before sheet work.
-            DispatchQueue.main.async {
-                self.load()
-                // load() publishes async when not already on main — but we are on main, so ready now.
-                onDone()
-            }
+            self.load()
+            // load() publishes immediately when already on main → ready before onDone.
+            onDone()
+        }
+        if Thread.isMainThread {
+            // Defer one turn so the host can paint black chrome first, then load.
+            DispatchQueue.main.async(execute: work)
+        } else {
+            DispatchQueue.main.async(execute: work)
         }
     }
 
