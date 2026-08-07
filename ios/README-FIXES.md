@@ -39,7 +39,13 @@ Then **Product → Clean Build Folder**, delete the app from the phone, rebuild 
 
 ## Asset tip
 
-Use the **small transparent sheets** (~256×256) in `Assets.xcassets`, not the raw 1024×1024 generation sheets.
+Use the **small transparent sheets** (~256×256) in `Assets.xcassets`, not the raw 1024×1024 generation sheets. If Console shows:
+
+```text
+[JJ] chroma-key on large sheet …
+```
+
+swap those images for the pre-keyed `sheet-transparent.png` versions.
 
 ## Quick retest checklist
 
