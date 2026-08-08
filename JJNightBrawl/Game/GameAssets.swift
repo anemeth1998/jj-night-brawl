@@ -121,33 +121,35 @@ final class GameAssets {
     /// Only flipped to true on the main thread after a full load finishes.
     private(set) var ready = false
 
-    /// Synchronous load. Prefer `loadAsync` so launch never blocks the main thread.
-    func load() {
-        let idle = must("jj_idle", 2, 2)
-        let walk = must("jj_walk", 4, 2)
-        let attack = must("jj_attack", 2, 2)
-        let kick = must("jj_kick", 2, 2)
-        let hurt = must("jj_hurt", 2, 2)
-        let jump = must("jj_jump", 2, 2)
-        let special = must("jj_special", 2, 2)
-        let smoke = must("jj_smoke", 2, 2)
-        let victory = must("jj_victory", 2, 2)
+    /// Build sprite sheets. Prefer `stripChroma: false` for first paint — production assets
+    /// are already transparent; chroma is expensive and blocked the main thread on device.
+    func load(stripChroma: Bool = false) {
+        let t0 = CFAbsoluteTimeGetCurrent()
+        let idle = must("jj_idle", 2, 2, stripChroma: stripChroma)
+        let walk = must("jj_walk", 4, 2, stripChroma: stripChroma)
+        let attack = must("jj_attack", 2, 2, stripChroma: stripChroma)
+        let kick = must("jj_kick", 2, 2, stripChroma: stripChroma)
+        let hurt = must("jj_hurt", 2, 2, stripChroma: stripChroma)
+        let jump = must("jj_jump", 2, 2, stripChroma: stripChroma)
+        let special = must("jj_special", 2, 2, stripChroma: stripChroma)
+        let smoke = must("jj_smoke", 2, 2, stripChroma: stripChroma)
+        let victory = must("jj_victory", 2, 2, stripChroma: stripChroma)
         let portrait = UIImage(named: "jj_portrait")
 
         var enemies: [String: SpriteSheet] = [:]
         for t in ["biz", "maga", "gothm", "gothf"] {
             for a in ["idle", "walk", "attack"] {
-                // Strip leftover chroma-key pink boxes (esp. biz walk, maga/gothm attack).
-                if let s = opt("en_\(t)_\(a)", 2, 2, stripChroma: true) {
+                if let s = opt("en_\(t)_\(a)", 2, 2, stripChroma: stripChroma) {
                     enemies["\(t)_\(a)"] = s
                 }
             }
         }
-        let impactSheet = opt("fx_impact", 2, 2)
+        let impactSheet = opt("fx_impact", 2, 2, stripChroma: stripChroma)
         let skyImg = UIImage(named: "map_sky")
         let farImg = UIImage(named: "map_far")
         let midImg = UIImage(named: "map_mid")
         let isReady = idle != nil && walk != nil
+        print("[JJ] assets load stripChroma=\(stripChroma) ready=\(isReady) idle=\(idle != nil) walk=\(walk != nil) enemies=\(enemies.count) dt=\(String(format: "%.3f", CFAbsoluteTimeGetCurrent() - t0))s")
 
         let publish = { [weak self] in
             guard let self else { return }
@@ -169,8 +171,7 @@ final class GameAssets {
             self.ready = isReady
         }
 
-        // Always publish on main; never main.sync from a background loader (deadlock risk
-        // if the main queue is waiting on asset work or UIKit is mid-update).
+        // Never main.sync from background — that deadlocks / freezes device launch.
         if Thread.isMainThread {
             publish()
         } else {
@@ -178,23 +179,27 @@ final class GameAssets {
         }
     }
 
-    /// Async load on the main queue (UIImage(named:) + catalog are main-safe).
-    /// Single hop so title/combat can paint within ~1–2 runloop turns after appear.
+    /// Fast background load (no chroma) so the title paints quickly on device, then
+    /// optional chroma polish on a background queue without blocking UI.
     func loadAsync(onDone: @escaping () -> Void) {
-        let work = { [weak self] in
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self else {
-                onDone()
+                DispatchQueue.main.async(execute: onDone)
                 return
             }
-            self.load()
-            // load() publishes immediately when already on main → ready before onDone.
-            onDone()
-        }
-        if Thread.isMainThread {
-            // Defer one turn so the host can paint black chrome first, then load.
-            DispatchQueue.main.async(execute: work)
-        } else {
-            DispatchQueue.main.async(execute: work)
+            // Pass 1: show the game ASAP (catalog PNGs are pre-keyed transparent).
+            self.load(stripChroma: false)
+            DispatchQueue.main.async {
+                onDone()
+            }
+            // Pass 2 (optional polish): re-key pink leftovers without freezing first frame.
+            DispatchQueue.global(qos: .utility).async { [weak self] in
+                guard let self else { return }
+                self.load(stripChroma: true)
+                DispatchQueue.main.async {
+                    // No extra onDone — UI already interactive; redraw will pick up sheets.
+                }
+            }
         }
     }
 

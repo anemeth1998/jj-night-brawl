@@ -31,15 +31,19 @@ final class GameCanvasUIView: UIView {
         // Pro Max is @3x; full-screen Core Graphics at 120Hz×3x will watchdog-kill.
         // Cap backing scale — still sharp enough, far cheaper to redraw.
         contentScaleFactor = min(UIScreen.main.scale, 2.0)
-        layer.drawsAsynchronously = true
+        // NOTE: drawsAsynchronously can leave a blank/black framebuffer on device.
+        layer.drawsAsynchronously = false
 
-        // Load assets off the main thread (chroma-key on large sheets used to block launch).
+        // Load sprites off the main thread so device launch never sits on a black main thread.
         assets.loadAsync { [weak self] in
             guard let self else { return }
             self.setNeedsDisplay()
             self.maybeAutoStartAfterAssetsReady()
         }
-        engine.audio.unlock()
+        // Defer audio until after first layout — AVAudioSession can stall first paint on device.
+        DispatchQueue.main.async { [weak self] in
+            self?.engine.audio.unlock()
+        }
         installLifecycleObservers()
     }
 
@@ -94,6 +98,14 @@ final class GameCanvasUIView: UIView {
         })
     }
 
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        // Ensure the loop is running once we have a real size (device can lay out late).
+        if bounds.width > 1, bounds.height > 1, displayLink == nil {
+            startLoop()
+        }
+    }
+
     func startLoop() {
         guard displayLink == nil else { return }
         let link = CADisplayLink(target: self, selector: #selector(tick))
@@ -107,6 +119,7 @@ final class GameCanvasUIView: UIView {
         link.add(to: .main, forMode: .common)
         displayLink = link
         lastTime = CACurrentMediaTime()
+        setNeedsDisplay()
     }
 
     func stopLoop() {
@@ -195,11 +208,16 @@ final class GameCanvasUIView: UIView {
                 break
             }
         } else {
+            // Visible on black so device users know we aren't frozen.
             let s = "Loading…" as NSString
-            s.draw(at: CGPoint(x: 400, y: 250), withAttributes: [
-                .font: UIFont.systemFont(ofSize: 20),
-                .foregroundColor: UIColor.lightGray
-            ])
+            let attrs: [NSAttributedString.Key: Any] = [
+                .font: UIFont.boldSystemFont(ofSize: 28),
+                .foregroundColor: UIColor(white: 0.85, alpha: 1)
+            ]
+            let sz = s.size(withAttributes: attrs)
+            s.draw(at: CGPoint(x: (GameRenderer.viewW - sz.width) / 2,
+                               y: (GameRenderer.viewH - sz.height) / 2),
+                   withAttributes: attrs)
         }
         ctx.restoreGState()
     }
@@ -261,12 +279,19 @@ final class GameCanvasUIView: UIView {
 /// assigning `@State` from `makeUIView` is dropped, leaving START / controls as no-ops.
 final class GameCanvasBridge: ObservableObject {
     weak var canvas: GameCanvasUIView?
+    /// True once sprite sheets finished loading (drives SwiftUI Loading overlay).
+    @Published var assetsReady = false
 
     var engine: GameEngine? { canvas?.engine }
 
     @discardableResult
     func startGame() -> Bool {
         guard let canvas else { return false }
+        // Don't start combat until art is ready — otherwise pure black / empty combat.
+        guard canvas.assets.ready else {
+            print("[JJ] startGame ignored — assets not ready")
+            return false
+        }
         canvas.engine.audio.unlock()
         canvas.engine.startGame()
         canvas.engine.clearTouch()
@@ -302,6 +327,20 @@ struct GameCanvasRepresentable: UIViewRepresentable {
         // Publish after the current SwiftUI update cycle so @StateObject sees it.
         DispatchQueue.main.async {
             context.coordinator.bridge.canvas = v
+            context.coordinator.bridge.assetsReady = v.assets.ready
+        }
+        // Poll ready once so SwiftUI overlay clears when background load finishes.
+        Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak bridge = context.coordinator.bridge, weak v] timer in
+            guard let bridge, let v else {
+                timer.invalidate()
+                return
+            }
+            if v.assets.ready {
+                if !bridge.assetsReady {
+                    bridge.assetsReady = true
+                }
+                timer.invalidate()
+            }
         }
         v.startLoop()
         DispatchQueue.main.async { _ = v.becomeFirstResponder() }
@@ -361,6 +400,21 @@ struct ContentView: View {
                 )
                 .ignoresSafeArea()
 
+                // Device-visible loading state (canvas "Loading…" can be easy to miss).
+                if !bridge.assetsReady {
+                    VStack(spacing: 12) {
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                            .tint(.white)
+                        Text("Loading…")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.9))
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.black.opacity(0.55))
+                    .allowsHitTesting(false)
+                }
+
                 // Overlay chrome only — empty space must NOT steal taps from the canvas.
                 VStack(spacing: 0) {
                     topBar
@@ -369,6 +423,8 @@ struct ContentView: View {
                     if showsMenuButton {
                         menuButton
                             .padding(.bottom, 8)
+                            .opacity(bridge.assetsReady ? 1 : 0.45)
+                            .disabled(!bridge.assetsReady)
                     }
                     if showsTouchPad {
                         TouchControlPad(
