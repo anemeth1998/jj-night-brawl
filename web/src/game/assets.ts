@@ -35,13 +35,29 @@ interface SheetDef {
   rows: number;
 }
 
-const V = "v=16";
+const V = "v=17";
 
 const MENU_LOOP_COUNT = 50;
 export const MENU_LOOP_SRCS = Array.from(
   { length: MENU_LOOP_COUNT },
   (_, i) => `/assets/ui/menu-frames/f${String(i + 1).padStart(3, "0")}.png?${V}`,
 );
+
+export const ANDREW_LOOP_SRCS = Array.from(
+  { length: MENU_LOOP_COUNT },
+  (_, i) => `/assets/ui/andrew-frames/f${String(i + 1).padStart(3, "0")}.jpg?${V}`,
+);
+
+export const HAN_LOOP_SRCS = Array.from(
+  { length: MENU_LOOP_COUNT },
+  (_, i) => `/assets/ui/han-frames/f${String(i + 1).padStart(3, "0")}.jpg?${V}`,
+);
+
+export const CHAR_LOOP_VIDEO: Record<"jj" | "andrew" | "han", string> = {
+  jj: `/assets/ui/menu-select-loop.mp4?${V}`,
+  andrew: `/assets/ui/andrew-hover.mp4?${V}`,
+  han: `/assets/ui/han-hover.mp4?${V}`,
+};
 
 const SHEETS: Record<SheetKey, SheetDef> = {
   jjIdle: { src: `/assets/sprites/jj/idle/sheet-transparent.png?${V}`, cols: 2, rows: 2 },
@@ -124,6 +140,11 @@ export async function loadAssets(): Promise<AssetMap> {
 
 export async function loadMenuLoop(): Promise<HTMLImageElement[]> {
   return Promise.all(MENU_LOOP_SRCS.map((src) => loadImage(src)));
+}
+
+export async function loadCharLoop(id: "andrew" | "han"): Promise<HTMLImageElement[]> {
+  const srcs = id === "andrew" ? ANDREW_LOOP_SRCS : HAN_LOOP_SRCS;
+  return Promise.all(srcs.map((src) => loadImage(src)));
 }
 
 /** Frame index left-to-right, top-to-bottom */

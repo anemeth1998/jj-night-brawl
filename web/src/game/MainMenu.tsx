@@ -84,6 +84,7 @@ export function MainMenu({
   onSetChar,
   onSetMode,
   onFeedback,
+  onHoverChar,
 }: {
   screen: MenuScreen;
   selected: number;
@@ -104,6 +105,7 @@ export function MainMenu({
   onSetChar: (id: CharacterId) => void;
   onSetMode: (m: PlayMode) => void;
   onFeedback: (text: string) => void;
+  onHoverChar?: (id: CharacterId | null) => void;
 }) {
   const last = lastPlayedSlot(profile);
   const items = NAV;
@@ -426,6 +428,7 @@ export function MainMenu({
                         onSetChar(id);
                         onSetMode("endless");
                       }}
+                      onHover={onHoverChar}
                     />
                   );
                 })}
@@ -603,6 +606,7 @@ function CharCard({
   owned,
   active,
   onPick,
+  onHover,
 }: {
   id: CharacterId;
   name: string;
@@ -611,24 +615,36 @@ function CharCard({
   owned: boolean;
   active: boolean;
   onPick: () => void;
+  onHover?: (id: CharacterId | null) => void;
 }) {
   const [hot, setHot] = useState(false);
-  const vid = id === "andrew" ? "/assets/ui/andrew-hover.mp4" : id === "han" ? "/assets/ui/han-hover.mp4" : null;
   const still =
     id === "andrew"
-      ? "/assets/sprites/andrew/idle/sheet-transparent.png"
+      ? "/assets/ui/andrew-frames/f001.jpg"
       : id === "han"
-        ? "/assets/sprites/han/idle/sheet-transparent.png"
+        ? "/assets/ui/han-frames/f001.jpg"
         : "/assets/sprites/jj/idle/sheet-transparent.png";
   return (
     <button
       type="button"
       disabled={!owned}
       onClick={onPick}
-      onMouseEnter={() => setHot(true)}
-      onMouseLeave={() => setHot(false)}
-      onFocus={() => setHot(true)}
-      onBlur={() => setHot(false)}
+      onMouseEnter={() => {
+        setHot(true);
+        onHover?.(id);
+      }}
+      onMouseLeave={() => {
+        setHot(false);
+        onHover?.(null);
+      }}
+      onFocus={() => {
+        setHot(true);
+        onHover?.(id);
+      }}
+      onBlur={() => {
+        setHot(false);
+        onHover?.(null);
+      }}
       className={`flex items-center gap-3 rounded-lg border px-2 py-2 text-left ${
         !owned
           ? "border-border bg-bg/40 text-muted"
@@ -638,11 +654,7 @@ function CharCard({
       }`}
     >
       <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-md bg-black">
-        {hot && vid ? (
-          <video src={vid} autoPlay muted loop playsInline className="h-full w-full object-contain" />
-        ) : (
-          <img src={still} alt="" className="pixelated h-full w-full object-contain" />
-        )}
+        <img src={still} alt="" className="pixelated h-full w-full object-cover object-right" />
       </div>
       <div className="min-w-0">
         <p className="text-sm font-semibold">
@@ -651,8 +663,9 @@ function CharCard({
         <p className="text-[11px] text-muted">
           {role} — {blurb}
         </p>
-        {hot && id === "andrew" && <p className="text-[10px] text-accent">Typing…</p>}
-        {hot && id === "han" && <p className="text-[10px] text-accent">On her phone…</p>}
+        {hot && id === "andrew" && <p className="text-[10px] text-accent">Typing… drinks a soda</p>}
+        {hot && id === "han" && <p className="text-[10px] text-accent">On her phone… a cat walks by</p>}
+        {hot && id === "jj" && <p className="text-[10px] text-accent">Alley smoke loop</p>}
       </div>
     </button>
   );

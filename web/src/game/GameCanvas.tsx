@@ -13,7 +13,7 @@ import {
   type StartOpts,
 } from "./engine";
 import type { AttackKind, GameState } from "./types";
-import { loadAssets, type AssetMap } from "./assets";
+import { loadAssets, CHAR_LOOP_VIDEO, type AssetMap } from "./assets";
 import { sfx, unlockAudio, toggleMute, isMuted, setMuted, stopTrack, playMenuTheme, fadeOutMenuTheme, fadeInMenuTheme } from "./audio";
 import { MainMenu, type MenuScreen } from "./MainMenu";
 import {
@@ -91,6 +91,7 @@ export function GameCanvas() {
   profileRef.current = profile;
   const [pendingChar, setPendingChar] = useState<CharacterId>("jj");
   const [pendingMode, setPendingMode] = useState<PlayMode>("story");
+  const [hoverChar, setHoverChar] = useState<CharacterId | null>(null);
   const [titleCard, setTitleCard] = useState(true);
   const lastPhase = useRef<Overlay>("title");
 
@@ -443,6 +444,7 @@ export function GameCanvas() {
     setTitleCard(false);
     setMenuScreen("menu");
     setMenuIndex(0);
+    setHoverChar(null);
     lastPhase.current = "title";
     syncHud();
   };
@@ -498,6 +500,9 @@ export function GameCanvas() {
 
   const showMenu = ready && phase === "title" && !titleCard;
   const showCombatHud = ready && (phase === "playing" || phase === "waveClear" || phase === "paused");
+  const loopChar: CharacterId =
+    showMenu && menuScreen === "chars" ? (hoverChar ?? pendingChar) : "jj";
+  const loopSrc = CHAR_LOOP_VIDEO[loopChar];
 
   useEffect(() => {
     const v = menuVideoRef.current;
@@ -508,7 +513,7 @@ export function GameCanvas() {
     } else {
       v.pause();
     }
-  }, [showMenu]);
+  }, [showMenu, loopSrc]);
 
   return (
     <div
@@ -526,8 +531,11 @@ export function GameCanvas() {
           )}
           <video
             ref={menuVideoRef}
-            className={`absolute inset-0 z-[1] h-full w-full origin-left scale-125 object-cover object-left ${showMenu ? "block" : "hidden"}`}
-            src="/assets/ui/menu-select-loop.mp4?v=16"
+            key={loopSrc}
+            className={`absolute inset-0 z-[1] h-full w-full object-cover ${
+              loopChar === "jj" ? "origin-left scale-125 object-left" : "object-center"
+            } ${showMenu ? "block" : "hidden"}`}
+            src={loopSrc}
             muted
             loop
             playsInline
@@ -592,9 +600,13 @@ export function GameCanvas() {
               onMove={(dir) => setMenuIndex((i) => (i + dir + 15) % 15)}
               onOpen={(s) => {
                 setMenuScreen(s);
+                if (s !== "chars") setHoverChar(null);
                 sfx.uiClick();
               }}
-              onBack={() => setMenuScreen("menu")}
+              onBack={() => {
+                setMenuScreen("menu");
+                setHoverChar(null);
+              }}
               onToggleMute={onMute}
               onContinue={onContinue}
               onStart={onStart}
@@ -606,6 +618,7 @@ export function GameCanvas() {
               onSetChar={setPendingChar}
               onSetMode={setPendingMode}
               onFeedback={onFeedback}
+              onHoverChar={setHoverChar}
             />
           )}
 

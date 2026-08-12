@@ -18,7 +18,19 @@ Downtown trio is also at `assets/map/` for the current iOS loader (`map_sky` / `
 
 See [`assets/Background/README.md`](assets/Background/README.md).
 
-## Art drops — character poses + cutscenes (2026-08-12)
+## Menu / character-select loops (2026-08-12)
+
+Full 16:9 alley loops. Same locked camera as Menu Select (brick wall, character on the right).
+
+| Path | Frames | Motion |
+|---|---|---|
+| `assets/ui/menu-select-loop.mp4` | video (+ 50 PNG frames in project) | JJ smokes / idle |
+| `assets/ui/andrew-hover.mp4` | 50 JPG `assets/ui/andrew-frames/f001–f050.jpg` | Types on laptop, drinks a soda, back to typing |
+| `assets/ui/han-hover.mp4` | 50 JPG `assets/ui/han-frames/f001–f050.jpg` | Types on phone, pets a cat that walks by |
+
+Character Select swaps the full-screen background to Andrew or Han when you hover / select them.
+
+
 
 Text index is in git under [`assets/art-drops/`](assets/art-drops/). **JPG binaries** ship in:
 
