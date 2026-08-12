@@ -240,14 +240,17 @@ export function startGame(state: GameState, opts?: StartOpts) {
   state.slotIndex = opts?.slotIndex ?? 0;
   state.mods = mods;
   state.maxWaves = mode === "endless" ? 99 : 5;
-  state.player = makePlayer(hp, spec.hue, characterId === "rex" ? 1.82 : characterId === "ash" ? 1.58 : 1.7);
+  state.player = makePlayer(
+    hp,
+    0,
+    characterId === "andrew" ? 1.62 : characterId === "han" ? 1.58 : 1.7,
+  );
   if (opts?.slot) {
     state.score = opts.slot.score;
     state.hasGun = opts.slot.hasGun;
     state.specialMeter = opts.slot.specialMeter;
     state.player.hp = Math.min(hp, Math.max(20, opts.slot.hp));
   }
-  if (mode === "endless" && characterId === "rex") state.hasGun = true;
   if (startWave > 3) state.hasGun = true;
   sfx.uiConfirm();
   beginWave(state, Math.max(1, startWave));
@@ -954,7 +957,8 @@ function updatePlayer(state: GameState, dt: number) {
   p.y += p.vy * dt;
   updatePhysics(p, dt);
   clampFighter(p, state.stageWidth);
-  updateFighterAnim(p, dt, moving && canAct(p) && grounded(p), 8, PLAYER_WALK_FPS);
+  const walkFrames = state.characterId === "jj" ? 8 : 4;
+  updateFighterAnim(p, dt, moving && canAct(p) && grounded(p), walkFrames, PLAYER_WALK_FPS);
 }
 
 function updateEnemyAI(state: GameState, e: Fighter, dt: number) {
@@ -1181,12 +1185,19 @@ function enemySheet(type: EnemyType | undefined, anim: "idle" | "walk" | "attack
   return assets[key] ?? assets.bizIdle;
 }
 
-function sheetFor(f: Fighter, assets: AssetMap) {
+function sheetFor(f: Fighter, assets: AssetMap, characterId?: string) {
   if (f.kind === "player") {
+    if (characterId === "andrew") {
+      if (f.anim === "walk") return assets.andrewWalk;
+      return assets.andrewIdle;
+    }
+    if (characterId === "han") {
+      if (f.anim === "walk") return assets.hanWalk;
+      return assets.hanIdle;
+    }
     if (f.anim === "attack") {
       if (f.attackKind === "special") return assets.jjSpecial;
       if (f.attackKind === "kick") return assets.jjKick;
-      // Gun uses punch pose + drawn pistol overlay
       return assets.jjAttack;
     }
     if (f.anim === "hurt" || f.dead) return assets.jjHurt;
@@ -1209,8 +1220,14 @@ function walkBob(f: Fighter): number {
   return 0;
 }
 
-function drawFighter(ctx: CanvasRenderingContext2D, f: Fighter, assets: AssetMap, camX: number) {
-  const sheet = sheetFor(f, assets);
+function drawFighter(
+  ctx: CanvasRenderingContext2D,
+  f: Fighter,
+  assets: AssetMap,
+  camX: number,
+  characterId?: string,
+) {
+  const sheet = sheetFor(f, assets, characterId);
   if (!sheet?.img || !sheet.frameW || !sheet.frameH) return;
   // Slightly larger while shredding so the guitar reads
   const scaleBoost = f.kind === "player" && f.attackKind === "special" ? 1.15 : 1;
@@ -1565,7 +1582,7 @@ export function renderGame(
 
   const fighters: Fighter[] = [state.player, ...state.enemies].filter(Boolean);
   fighters.sort((a, b) => a.y - b.y || a.z - b.z);
-  for (const f of fighters) drawFighter(ctx, f, assets, state.cameraX);
+  for (const f of fighters) drawFighter(ctx, f, assets, state.cameraX, state.characterId);
   if (state.hasGun && !state.player.dead) {
     drawPlayerGun(
       ctx,

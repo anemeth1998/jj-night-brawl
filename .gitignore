@@ -3,3 +3,17 @@ node_modules/
 .github_repo
 .env
 .env.*
+artifacts/
+screenshots/
+attachments/
+public/assets/ui/menu-frames/
+public/assets/sprites/andrew/hover/
+public/assets/sprites/han/hover/
+public/assets/refs/
+JJNightBrawl-FOR-XCODE.tar.gz
+.grok/status
+dist/
+.output/
+.nitro/
+.tanstack/
+*.log

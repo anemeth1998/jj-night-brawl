@@ -1,9 +1,9 @@
 const KEY = "jj-night-brawl-profile-v1";
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 export const SLOT_COUNT = 3;
 
 export type PlayMode = "story" | "endless";
-export type CharacterId = "jj" | "ash" | "rex";
+export type CharacterId = "jj" | "andrew" | "han";
 
 export interface SaveSlot {
   updatedAt: number;
@@ -52,26 +52,26 @@ export const CHARACTERS: Record<
   jj: {
     name: "JJ",
     role: "Punk lead",
-    blurb: "Noise as resistance. Default kit.",
+    blurb: "Noise as resistance. Story lead.",
     hue: 0,
     hp: 100,
     speed: 1,
   },
-  ash: {
-    name: "Ash",
-    role: "Scene photographer",
-    blurb: "Faster, lighter. Endless only.",
-    hue: 42,
-    hp: 82,
-    speed: 1.18,
+  andrew: {
+    name: "Andrew",
+    role: "Scene coder",
+    blurb: "Faster hands. Types through the night.",
+    hue: 0,
+    hp: 92,
+    speed: 1.08,
   },
-  rex: {
-    name: "Rex",
-    role: "Ex-corp defector",
-    blurb: "Tougher. Starts with a gun in Endless.",
-    hue: 200,
-    hp: 118,
-    speed: 0.92,
+  han: {
+    name: "Han",
+    role: "Cat-ear chaos",
+    blurb: "Phone out, fists ready.",
+    hue: 0,
+    hp: 96,
+    speed: 1.12,
   },
 };
 
@@ -89,8 +89,6 @@ export const SHOP_ITEMS = [
   { id: "boots", name: "Worn Boots", blurb: "+ move speed", max: 3, prices: [220, 440, 880] },
   { id: "amp", name: "Amp Mod", blurb: "Special fills faster", max: 3, prices: [260, 520, 980] },
   { id: "kit", name: "Patch Kit", blurb: "+ max HP", max: 3, prices: [240, 480, 900] },
-  { id: "char_ash", name: "Unlock Ash", blurb: "Endless roster", max: 1, prices: [900] },
-  { id: "char_rex", name: "Unlock Rex", blurb: "Endless roster", max: 1, prices: [1200] },
 ] as const;
 
 export const ACHIEVEMENTS = [
@@ -103,6 +101,20 @@ export const ACHIEVEMENTS = [
   { id: "endless_five", name: "No Future?", desc: "Reach Endless wave 5" },
   { id: "full_roster", name: "The Band", desc: "Unlock every character" },
 ] as const;
+
+function migrateChars(list?: string[]): CharacterId[] {
+  const mapped = (list ?? ["jj"]).map((id) => {
+    if (id === "ash") return "andrew";
+    if (id === "rex") return "han";
+    return id as CharacterId;
+  });
+  const allowed: CharacterId[] = ["jj", "andrew", "han"];
+  const next = allowed.filter((id) => mapped.includes(id));
+  if (!next.includes("jj")) next.unshift("jj");
+  if (!next.includes("andrew")) next.push("andrew");
+  if (!next.includes("han")) next.push("han");
+  return next;
+}
 
 function defaults(): Profile {
   return {
@@ -117,7 +129,7 @@ function defaults(): Profile {
       bestEndlessWave: 0,
     },
     achievements: {},
-    shop: { cred: 120, levels: {}, ownedChars: ["jj"] },
+    shop: { cred: 120, levels: {}, ownedChars: ["jj", "andrew", "han"] },
     unlocks: { stages: [1], gallery: ["jjIdle"], endings: [] },
     slots: [null, null, null],
     lastSlot: null,
@@ -127,6 +139,12 @@ function defaults(): Profile {
 
 function migrate(raw: Profile): Profile {
   const d = defaults();
+  const slots = Array.from({ length: SLOT_COUNT }, (_, i) => {
+    const s = raw.slots?.[i] ?? null;
+    if (!s) return null;
+    const id = s.characterId === ("ash" as CharacterId) ? "andrew" : s.characterId === ("rex" as CharacterId) ? "han" : s.characterId;
+    return { ...s, characterId: id };
+  });
   return {
     ...d,
     ...raw,
@@ -137,14 +155,14 @@ function migrate(raw: Profile): Profile {
     shop: {
       cred: raw.shop?.cred ?? d.shop.cred,
       levels: { ...raw.shop?.levels },
-      ownedChars: raw.shop?.ownedChars?.length ? raw.shop.ownedChars : ["jj"],
+      ownedChars: migrateChars(raw.shop?.ownedChars),
     },
     unlocks: {
       stages: raw.unlocks?.stages?.length ? raw.unlocks.stages : [1],
       gallery: raw.unlocks?.gallery ?? d.unlocks.gallery,
       endings: raw.unlocks?.endings ?? [],
     },
-    slots: Array.from({ length: SLOT_COUNT }, (_, i) => raw.slots?.[i] ?? null),
+    slots,
     lastSlot: raw.lastSlot ?? null,
     feedback: raw.feedback ?? [],
   };

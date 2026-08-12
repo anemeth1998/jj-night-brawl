@@ -23,7 +23,11 @@ export type SheetKey =
   | "sky"
   | "farBg"
   | "midBg"
-  | "titleArt";
+  | "titleArt"
+  | "andrewIdle"
+  | "andrewWalk"
+  | "hanIdle"
+  | "hanWalk";
 
 interface SheetDef {
   src: string;
@@ -31,12 +35,12 @@ interface SheetDef {
   rows: number;
 }
 
-const V = "v=12";
+const V = "v=16";
 
-const MENU_LOOP_COUNT = 16;
+const MENU_LOOP_COUNT = 50;
 export const MENU_LOOP_SRCS = Array.from(
   { length: MENU_LOOP_COUNT },
-  (_, i) => `/assets/ui/menu-loop/${String(i).padStart(2, "0")}.jpg?${V}`,
+  (_, i) => `/assets/ui/menu-frames/f${String(i + 1).padStart(3, "0")}.png?${V}`,
 );
 
 const SHEETS: Record<SheetKey, SheetDef> = {
@@ -69,7 +73,11 @@ const SHEETS: Record<SheetKey, SheetDef> = {
   sky: { src: `/assets/map/sky.png?${V}`, cols: 1, rows: 1 },
   farBg: { src: `/assets/map/far-bg.png?${V}`, cols: 1, rows: 1 },
   midBg: { src: `/assets/map/mid-bg.png?${V}`, cols: 1, rows: 1 },
-  titleArt: { src: `/assets/ui/title-art.jpg?${V}`, cols: 1, rows: 1 },
+  titleArt: { src: `/assets/ui/title-screen.png?${V}`, cols: 1, rows: 1 },
+  andrewIdle: { src: `/assets/sprites/andrew/idle/sheet-transparent.png?${V}`, cols: 1, rows: 1 },
+  andrewWalk: { src: `/assets/sprites/andrew/walk/sheet-transparent.png?${V}`, cols: 2, rows: 2 },
+  hanIdle: { src: `/assets/sprites/han/idle/sheet-transparent.png?${V}`, cols: 1, rows: 1 },
+  hanWalk: { src: `/assets/sprites/han/walk/sheet-transparent.png?${V}`, cols: 2, rows: 2 },
 };
 
 export interface LoadedSheet {

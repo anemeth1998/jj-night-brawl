@@ -13,7 +13,7 @@ import {
   type StartOpts,
 } from "./engine";
 import type { AttackKind, GameState } from "./types";
-import { loadAssets, loadMenuLoop, type AssetMap } from "./assets";
+import { loadAssets, type AssetMap } from "./assets";
 import { sfx, unlockAudio, toggleMute, isMuted, setMuted, stopTrack } from "./audio";
 import { MainMenu, type MenuScreen } from "./MainMenu";
 import {
@@ -75,6 +75,7 @@ export function GameCanvas() {
   const stateRef = useRef<GameState>(createGameState());
   const assetsRef = useRef<AssetMap | null>(null);
   const menuLoopRef = useRef<HTMLImageElement[]>([]);
+  const menuVideoRef = useRef<HTMLVideoElement>(null);
   const titleCardRef = useRef(true);
   const rafRef = useRef(0);
   const lastRef = useRef(0);
@@ -122,15 +123,10 @@ export function GameCanvas() {
   useEffect(() => {
     let cancelled = false;
     loadAssets()
-      .then(async (a) => {
+      .then((a) => {
         if (cancelled) return;
         assetsRef.current = a;
-        try {
-          menuLoopRef.current = await loadMenuLoop();
-        } catch {
-          menuLoopRef.current = [];
-        }
-        if (!cancelled) setReady(true);
+        setReady(true);
       })
       .catch((e: Error) => {
         if (!cancelled) setError(e.message || "Failed to load assets");
@@ -254,7 +250,9 @@ export function GameCanvas() {
           ctx.clearRect(0, 0, VIEW_W, VIEW_H);
           if (s.phase === "title") {
             if (titleCardRef.current) drawTitleBackdrop(ctx, assets, now);
-            else drawMenuLoop(ctx, menuLoopRef.current, now);
+            else {
+              ctx.clearRect(0, 0, VIEW_W, VIEW_H);
+            }
           } else {
             renderGame(ctx, s, assets);
           }
@@ -462,10 +460,10 @@ export function GameCanvas() {
     if (p.shop.cred < price) return;
     p.shop.cred -= price;
     p.shop.levels[id] = lv + 1;
-    if (id === "char_ash" && !p.shop.ownedChars.includes("ash")) p.shop.ownedChars.push("ash");
-    if (id === "char_rex" && !p.shop.ownedChars.includes("rex")) p.shop.ownedChars.push("rex");
+    if (id === "char_andrew" && !p.shop.ownedChars.includes("andrew")) p.shop.ownedChars.push("andrew");
+    if (id === "char_han" && !p.shop.ownedChars.includes("han")) p.shop.ownedChars.push("han");
     unlockAchievement(p, "shopaholic");
-    if (p.shop.ownedChars.includes("ash") && p.shop.ownedChars.includes("rex")) {
+    if (p.shop.ownedChars.includes("andrew") && p.shop.ownedChars.includes("han")) {
       unlockAchievement(p, "full_roster");
     }
     saveProfile(p);
@@ -487,18 +485,45 @@ export function GameCanvas() {
   const showMenu = ready && phase === "title" && !titleCard;
   const showCombatHud = ready && (phase === "playing" || phase === "waveClear" || phase === "paused");
 
+  useEffect(() => {
+    const v = menuVideoRef.current;
+    if (!v) return;
+    if (showMenu) {
+      v.currentTime = 0;
+      void v.play().catch(() => {});
+    } else {
+      v.pause();
+    }
+  }, [showMenu]);
+
   return (
     <div
       ref={wrapRef}
       className="relative flex h-full w-full flex-col items-center justify-center bg-bg"
     >
       <div className="relative w-full max-w-[1100px] px-2 sm:px-4">
-        <div className="relative mx-auto aspect-video w-full overflow-hidden rounded-xl border border-border bg-surface shadow-[0_0_40px_rgba(255,45,138,0.12)]">
+        <div className="relative mx-auto aspect-video w-full overflow-hidden rounded-xl border border-border bg-black shadow-[0_0_40px_rgba(255,45,138,0.12)]">
+          {ready && phase === "title" && titleCard && (
+            <img
+              src="/assets/ui/title-screen.png"
+              alt=""
+              className="absolute inset-0 z-[1] h-full w-full object-contain"
+            />
+          )}
+          <video
+            ref={menuVideoRef}
+            className={`absolute inset-0 z-[1] h-full w-full origin-left scale-125 object-cover object-left ${showMenu ? "block" : "hidden"}`}
+            src="/assets/ui/menu-select-loop.mp4?v=16"
+            muted
+            loop
+            playsInline
+            preload="auto"
+          />
           <canvas
             ref={canvasRef}
             width={VIEW_W}
             height={VIEW_H}
-            className="pixelated h-full w-full touch-none"
+            className={`pixelated relative z-[2] h-full w-full touch-none ${showMenu ? "pointer-events-none opacity-0" : ""}`}
             tabIndex={0}
             aria-label="JJ Beat-em-up game canvas"
           />
@@ -523,13 +548,9 @@ export function GameCanvas() {
                 setTitleCard(false);
                 sfx.uiConfirm();
               }}
-              className="absolute inset-0 z-20 flex flex-col items-center justify-end bg-transparent pb-10"
+              className="absolute inset-0 z-20 bg-transparent"
               aria-label="Press start"
-            >
-              <span className="animate-pulse rounded-full border border-primary/60 bg-bg/70 px-6 py-2 text-sm font-bold tracking-[0.28em] text-primary">
-                PRESS START
-              </span>
-            </button>
+            />
           )}
 
           {ready && !showMenu && !titleCard && (
@@ -722,50 +743,37 @@ function coverImage(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
   biasRight = false,
+  mode: "cover" | "contain" = "cover",
 ) {
   const iw = img.naturalWidth || img.width;
   const ih = img.naturalHeight || img.height;
   if (!iw || !ih) return;
-  const scale = Math.max(VIEW_W / iw, VIEW_H / ih);
+  const scale = mode === "contain" ? Math.min(VIEW_W / iw, VIEW_H / ih) : Math.max(VIEW_W / iw, VIEW_H / ih);
   const dw = iw * scale;
   const dh = ih * scale;
-  const dx = biasRight ? VIEW_W - dw : (VIEW_W - dw) / 2;
+  const dx = biasRight && mode === "cover" ? VIEW_W - dw : (VIEW_W - dw) / 2;
   const dy = (VIEW_H - dh) / 2;
-  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   ctx.drawImage(img, dx, dy, dw, dh);
 }
 
 function drawTitleBackdrop(ctx: CanvasRenderingContext2D, assets: AssetMap, _now: number) {
   const art = assets.titleArt?.img;
-  if (art && art.naturalWidth) coverImage(ctx, art, true);
+  if (art && art.naturalWidth) coverImage(ctx, art, false, "contain");
 }
 
 function drawMenuLoop(ctx: CanvasRenderingContext2D, frames: HTMLImageElement[], now: number) {
   if (!frames.length) {
-    ctx.fillStyle = "#080410";
+    ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     return;
   }
-  const hold = 1600;
-  const fade = 380;
-  const cycle = hold + fade;
-  const i = Math.floor(now / cycle) % frames.length;
-  const t = now % cycle;
-  const a = frames[i]!;
-  const b = frames[(i + 1) % frames.length]!;
-  coverImage(ctx, a);
-  if (t > hold) {
-    ctx.save();
-    ctx.globalAlpha = Math.min(1, (t - hold) / fade);
-    coverImage(ctx, b);
-    ctx.restore();
-  }
-  const fadeL = ctx.createLinearGradient(0, 0, VIEW_W * 0.58, 0);
-  fadeL.addColorStop(0, "rgba(8,4,16,0.9)");
-  fadeL.addColorStop(0.55, "rgba(8,4,16,0.58)");
-  fadeL.addColorStop(1, "rgba(8,4,16,0.1)");
-  ctx.fillStyle = fadeL;
-  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  const fps = 15;
+  const i = Math.floor((now / 1000) * fps) % frames.length;
+  const frame = frames[i]!;
+  coverImage(ctx, frame, false, "cover");
 }
 
 function drawCenterBanner(ctx: CanvasRenderingContext2D, title: string, sub: string) {

@@ -137,8 +137,9 @@ export function MainMenu({
   }, [screen, selected, items, onMove, onOpen, onBack, onContinue, onStart]);
 
   return (
-    <div className="absolute inset-0 z-10 flex items-stretch justify-start overflow-hidden bg-transparent p-3 sm:p-6">
-      <div className="flex min-h-0 w-full max-w-lg flex-col">
+    <div className="absolute inset-0 z-10 flex items-end justify-start overflow-hidden bg-transparent p-3 sm:items-stretch sm:p-5">
+      <div className="flex min-h-0 w-full max-w-[16.5rem] flex-col sm:max-w-xs">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-accent">Menu select</p>
         <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-accent">Night shift</p>
         <h2 className="text-2xl font-bold tracking-tight text-fg sm:text-3xl">JJ: Night Brawl</h2>
         <p className="mb-3 text-xs text-muted">
@@ -176,7 +177,7 @@ export function MainMenu({
                                 ? "cursor-not-allowed border-border/50 bg-surface/40 text-muted"
                                 : active
                                   ? "border-primary bg-primary text-primary-fg"
-                                  : "border-border bg-surface/90 text-fg hover:border-muted",
+                                  : "border-border/70 bg-bg/55 text-fg backdrop-blur-sm hover:border-muted",
                             ].join(" ")}
                           >
                             <span>{item.label}</span>
@@ -402,36 +403,26 @@ export function MainMenu({
 
           {screen === "chars" && (
             <Panel title="Character Select">
-              <p className="mb-2 text-xs text-muted">Endless only. Story is JJ's night.</p>
+              <p className="mb-2 text-xs text-muted">Endless only. Story is JJ's night. Hover Andrew or Han.</p>
               <div className="flex flex-col gap-2">
                 {(Object.keys(CHARACTERS) as CharacterId[]).map((id) => {
                   const c = CHARACTERS[id];
                   const owned = profile.shop.ownedChars.includes(id);
                   const active = pendingChar === id;
                   return (
-                    <button
+                    <CharCard
                       key={id}
-                      type="button"
-                      disabled={!owned}
-                      onClick={() => {
+                      id={id}
+                      name={c.name}
+                      role={c.role}
+                      blurb={c.blurb}
+                      owned={owned}
+                      active={active}
+                      onPick={() => {
                         onSetChar(id);
                         onSetMode("endless");
                       }}
-                      className={`rounded-lg border px-3 py-2 text-left ${
-                        !owned
-                          ? "border-border bg-bg/40 text-muted"
-                          : active
-                            ? "border-primary bg-primary/20 text-fg"
-                            : "border-border bg-surface-2 text-fg"
-                      }`}
-                    >
-                      <p className="text-sm font-semibold">
-                        {c.name} {!owned && "· Locked"}
-                      </p>
-                      <p className="text-[11px] text-muted">
-                        {c.role} — {c.blurb}
-                      </p>
-                    </button>
+                    />
                   );
                 })}
               </div>
@@ -597,6 +588,69 @@ function SupportForm({ onBack, onSend }: { onBack: () => void; onSend: (t: strin
       </button>
       <BackButton onClick={onBack} />
     </Panel>
+  );
+}
+
+function CharCard({
+  id,
+  name,
+  role,
+  blurb,
+  owned,
+  active,
+  onPick,
+}: {
+  id: CharacterId;
+  name: string;
+  role: string;
+  blurb: string;
+  owned: boolean;
+  active: boolean;
+  onPick: () => void;
+}) {
+  const [hot, setHot] = useState(false);
+  const vid = id === "andrew" ? "/assets/ui/andrew-hover.mp4" : id === "han" ? "/assets/ui/han-hover.mp4" : null;
+  const still =
+    id === "andrew"
+      ? "/assets/sprites/andrew/idle/sheet-transparent.png"
+      : id === "han"
+        ? "/assets/sprites/han/idle/sheet-transparent.png"
+        : "/assets/sprites/jj/idle/sheet-transparent.png";
+  return (
+    <button
+      type="button"
+      disabled={!owned}
+      onClick={onPick}
+      onMouseEnter={() => setHot(true)}
+      onMouseLeave={() => setHot(false)}
+      onFocus={() => setHot(true)}
+      onBlur={() => setHot(false)}
+      className={`flex items-center gap-3 rounded-lg border px-2 py-2 text-left ${
+        !owned
+          ? "border-border bg-bg/40 text-muted"
+          : active
+            ? "border-primary bg-primary/20 text-fg"
+            : "border-border/70 bg-bg/55 text-fg"
+      }`}
+    >
+      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-md bg-black">
+        {hot && vid ? (
+          <video src={vid} autoPlay muted loop playsInline className="h-full w-full object-contain" />
+        ) : (
+          <img src={still} alt="" className="pixelated h-full w-full object-contain" />
+        )}
+      </div>
+      <div className="min-w-0">
+        <p className="text-sm font-semibold">
+          {name} {!owned && "· Locked"}
+        </p>
+        <p className="text-[11px] text-muted">
+          {role} — {blurb}
+        </p>
+        {hot && id === "andrew" && <p className="text-[10px] text-accent">Typing…</p>}
+        {hot && id === "han" && <p className="text-[10px] text-accent">On her phone…</p>}
+      </div>
+    </button>
   );
 }
 
