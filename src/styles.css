@@ -1,0 +1,53 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme {
+  --color-bg: #0a0612;
+  --color-surface: #16101f;
+  --color-surface-2: #22182e;
+  --color-fg: #f4eef8;
+  --color-muted: #a89bb8;
+  --color-primary: #ff2d8a;
+  --color-primary-fg: #fff5fa;
+  --color-accent: #2de2e6;
+  --color-accent-fg: #041416;
+  --color-danger: #ff4d4d;
+  --color-border: #3a2a4a;
+  --color-gold: #ffd56a;
+  --font-sans: "Segoe UI", "Inter", system-ui, sans-serif;
+  --font-display: "Segoe UI", "Inter", system-ui, sans-serif;
+  --radius: 0.75rem;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #app {
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    background: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@layer utilities {
+  .pixelated {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+}

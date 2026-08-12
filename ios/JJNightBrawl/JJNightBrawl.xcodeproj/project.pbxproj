@@ -1,0 +1,237 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+		2364FA8D24AC458A9E739A4B /* GameAssets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameAssets.swift; sourceTree = "<group>"; };
+		7C586283381E47A397BC3AAF /* GameAudio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameAudio.swift; sourceTree = "<group>"; };
+		5B308C08DC974167BC9497FE /* GameCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameCanvasView.swift; sourceTree = "<group>"; };
+		F5AE5973B5A14F139F38C542 /* GameEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameEngine.swift; sourceTree = "<group>"; };
+		65FE464524464253BCFDC64D /* GameRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameRenderer.swift; sourceTree = "<group>"; };
+		20D0E330D56341CCB9547353 /* GameTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameTypes.swift; sourceTree = "<group>"; };
+		34CFDDAF3AE34535978C7132 /* JJNightBrawlApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JJNightBrawlApp.swift; sourceTree = "<group>"; };
+		CDF2DDDC5A814A1899FEE2DB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		5C386F9DC5504187B41CF13C /* JJNightBrawl.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = JJNightBrawl.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		329B0EE6D46C406D9067CFF6 /* GameAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2364FA8D24AC458A9E739A4B /* GameAssets.swift */; };
+		FC05CC4419B34714894B1E2F /* GameAudio.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C586283381E47A397BC3AAF /* GameAudio.swift */; };
+		2559DF0352A544008BB713BC /* GameCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B308C08DC974167BC9497FE /* GameCanvasView.swift */; };
+		4EAF1B65008F4AE0AB89DD4F /* GameEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5AE5973B5A14F139F38C542 /* GameEngine.swift */; };
+		56897D595E464714B342E24A /* GameRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65FE464524464253BCFDC64D /* GameRenderer.swift */; };
+		763B84455AD34B4CB4BA41F2 /* GameTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20D0E330D56341CCB9547353 /* GameTypes.swift */; };
+		D38F3988DAD74F5A95E238D3 /* JJNightBrawlApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34CFDDAF3AE34535978C7132 /* JJNightBrawlApp.swift */; };
+		7B53F03EAED940EC9D0D0E95 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CDF2DDDC5A814A1899FEE2DB /* Assets.xcassets */; };
+		39B4698D00EB41C0B1731F71 /* Game */ = {
+			isa = PBXGroup;
+			children = (
+				2364FA8D24AC458A9E739A4B /* GameAssets.swift */,
+				7C586283381E47A397BC3AAF /* GameAudio.swift */,
+				5B308C08DC974167BC9497FE /* GameCanvasView.swift */,
+				F5AE5973B5A14F139F38C542 /* GameEngine.swift */,
+				65FE464524464253BCFDC64D /* GameRenderer.swift */,
+				20D0E330D56341CCB9547353 /* GameTypes.swift */,
+			);
+			path = Game;
+			sourceTree = "<group>";
+		};
+		682C0E6EB2B5494FBC044166 /* JJNightBrawl */ = {
+			isa = PBXGroup;
+			children = (
+				39B4698D00EB41C0B1731F71 /* Game */,
+				34CFDDAF3AE34535978C7132 /* JJNightBrawlApp.swift */,
+				CDF2DDDC5A814A1899FEE2DB /* Assets.xcassets */,
+			);
+			path = JJNightBrawl;
+			sourceTree = "<group>";
+		};
+		074BA1B529AC4C4D918DE7D3 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				5C386F9DC5504187B41CF13C /* JJNightBrawl.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		EF4064E130524801A58CBC0D = {
+			isa = PBXGroup;
+			children = (
+				682C0E6EB2B5494FBC044166 /* JJNightBrawl */,
+				074BA1B529AC4C4D918DE7D3 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		FEA42E5AA0A94AB58FA43DB1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				329B0EE6D46C406D9067CFF6 /* GameAssets.swift in Sources */,
+				FC05CC4419B34714894B1E2F /* GameAudio.swift in Sources */,
+				2559DF0352A544008BB713BC /* GameCanvasView.swift in Sources */,
+				4EAF1B65008F4AE0AB89DD4F /* GameEngine.swift in Sources */,
+				56897D595E464714B342E24A /* GameRenderer.swift in Sources */,
+				763B84455AD34B4CB4BA41F2 /* GameTypes.swift in Sources */,
+				D38F3988DAD74F5A95E238D3 /* JJNightBrawlApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6918D591823E4A9C8230E7EC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7B53F03EAED940EC9D0D0E95 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BB04D276BB614C42A9196B8F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3565B41E6EBD4AD781114896 /* JJNightBrawl */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A405DBF3C3E14CBC9C01B548 /* Build configuration list for PBXNativeTarget "JJNightBrawl" */;
+			buildPhases = (
+				FEA42E5AA0A94AB58FA43DB1 /* Sources */,
+				BB04D276BB614C42A9196B8F /* Frameworks */,
+				6918D591823E4A9C8230E7EC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = JJNightBrawl;
+			productName = JJNightBrawl;
+			productReference = 5C386F9DC5504187B41CF13C /* JJNightBrawl.app */;
+			productType = "com.apple.product-type.application";
+		};
+		866BCDBDA4E84E4CB7FEC1C5 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+			};
+			buildConfigurationList = CF5A08EF54484363B1A938FB /* Build configuration list for PBXProject "JJNightBrawl" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = EF4064E130524801A58CBC0D;
+			productRefGroup = 074BA1B529AC4C4D918DE7D3 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				3565B41E6EBD4AD781114896 /* JJNightBrawl */,
+			);
+		};
+		B821D2CDD0474879B5A7C9B3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "JJ Night Brawl";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIStatusBarHidden = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jj.nightbrawl;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+			};
+			name = Debug;
+		};
+		583E7AD7B41241E1B6B7BCF2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "JJ Night Brawl";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIStatusBarHidden = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jj.nightbrawl;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+			};
+			name = Release;
+		};
+		306474924BBF4ED2B99D04A3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A7312F3040C3416A87AD4E45 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		CF5A08EF54484363B1A938FB /* Build configuration list for PBXProject "JJNightBrawl" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				306474924BBF4ED2B99D04A3 /* Debug */,
+				A7312F3040C3416A87AD4E45 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A405DBF3C3E14CBC9C01B548 /* Build configuration list for PBXNativeTarget "JJNightBrawl" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B821D2CDD0474879B5A7C9B3 /* Debug */,
+				583E7AD7B41241E1B6B7BCF2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+	};
+	rootObject = 866BCDBDA4E84E4CB7FEC1C5 /* Project object */;
+}

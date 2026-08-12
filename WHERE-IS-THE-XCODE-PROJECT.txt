@@ -1,0 +1,23 @@
+JJ: NIGHT BRAWL — XCODE PROJECT LOCATION
+========================================
+
+EASIEST DOWNLOAD (single file):
+  /workspace/JJNightBrawl-FOR-XCODE.tar.gz
+
+Same archive also at:
+  /workspace/ios/JJNightBrawl-Xcode.tar.gz
+
+OPEN THIS IN XCODE (folder):
+  /workspace/JJNightBrawl-XCODE-PROJECT/JJNightBrawl.xcodeproj
+  or
+  /workspace/ios/JJNightBrawl/JJNightBrawl.xcodeproj
+
+After you get the .tar.gz onto your Mac:
+  1. Double-click JJNightBrawl-FOR-XCODE.tar.gz to unpack
+  2. Open the folder that appears
+  3. Double-click JJNightBrawl.xcodeproj
+  4. Press Run (Cmd+R)
+
+ON YOUR MAC (Terminal):
+  tar -xzf JJNightBrawl-FOR-XCODE.tar.gz
+  open JJNightBrawl/JJNightBrawl.xcodeproj
