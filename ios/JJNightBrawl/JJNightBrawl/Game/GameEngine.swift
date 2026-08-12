@@ -15,14 +15,25 @@ final class GameEngine {
     var playerDecel: CGFloat = 2800
     var playerAirAccel: CGFloat = 1400
 
+    /// Named control-feel constants (stick / facing / buffers). Prefer these over magic numbers.
+    enum ControlTuning {
+        static let stickDeadzone: CGFloat = 0.08
+        static let stickDigitalMirror: CGFloat = 0.25
+        static let facingThreshold: CGFloat = 0.2
+        static let moveAnimSpeed: CGFloat = 30
+        /// Early-press jump window (seconds) that still fires on landing.
+        static let jumpBuffer: CGFloat = 0.14
+        /// Single-slot action buffer depth (light punch/kick during recovery).
+        static let attackBufferMax = 1
+        /// Documented minimum touch target; canvas ActionPadButton uses ≥56pt.
+        static let minTouchPt: CGFloat = 44
+    }
+
     private let gravity: CGFloat = 2200
     private let jumpVel: CGFloat = 720
     private let groundY: CGFloat = 0
     private let laneMin: CGFloat = -90
     private let laneMax: CGFloat = 90
-    private let stickDeadzone: CGFloat = 0.08
-    private let facingThreshold: CGFloat = 0.2
-    private let moveAnimSpeed: CGFloat = 30
 
     private var nextId = 1
     var onSfx: ((String) -> Void)?
@@ -75,16 +86,17 @@ final class GameEngine {
     }
 
     /// Analog move from virtual stick. Values clamped to -1...1.
-    /// Coarse bools mirrored at ±0.25 for any code still reading digital touch flags.
+    /// Coarse bools mirrored at ±`ControlTuning.stickDigitalMirror`.
     func setMoveAxis(x: CGFloat, y: CGFloat) {
         let ax = max(-1, min(1, x))
         let ay = max(-1, min(1, y))
         state.touch.axisX = ax
         state.touch.axisY = ay
-        state.touch.left = ax < -0.25
-        state.touch.right = ax > 0.25
-        state.touch.up = ay < -0.25
-        state.touch.down = ay > 0.25
+        let m = ControlTuning.stickDigitalMirror
+        state.touch.left = ax < -m
+        state.touch.right = ax > m
+        state.touch.up = ay < -m
+        state.touch.down = ay > m
     }
 
     func clearTouch() {
@@ -100,14 +112,29 @@ final class GameEngine {
         }
     }
 
+    /// Single-slot light buffer: replace pending move (depth = `attackBufferMax`).
     func queueAttack(_ kind: AttackKind) {
         guard state.phase == .playing else { return }
-        state.actionQueue.append(kind)
+        queueAction(kind)
+    }
+
+    func queueAction(_ kind: AttackKind) {
+        guard state.phase == .playing else { return }
+        // Keep light: one pending attack only (no deep combo buffer).
+        if ControlTuning.attackBufferMax <= 1 {
+            state.actionQueue = [kind]
+        } else {
+            state.actionQueue.append(kind)
+            if state.actionQueue.count > ControlTuning.attackBufferMax {
+                state.actionQueue.removeFirst(state.actionQueue.count - ControlTuning.attackBufferMax)
+            }
+        }
     }
 
     func queueJump() {
         guard state.phase == .playing else { return }
         state.jumpQueued = true
+        state.jumpBufferTimer = ControlTuning.jumpBuffer
     }
 
     func startGame() {
@@ -129,6 +156,9 @@ final class GameEngine {
         state.player.vx = 0
         state.player.vy = 0
         state.player.anim = .idle
+        state.actionQueue.removeAll()
+        state.jumpQueued = false
+        state.jumpBufferTimer = 0
         state.message = "WAVE 1"
         state.messageTimer = 2
         state.waveEnemiesLeft = 4
@@ -168,11 +198,12 @@ final class GameEngine {
         var ax = state.touch.axisX
         var ay = state.touch.axisY
         let r = hypot(ax, ay)
-        if r < stickDeadzone {
+        let dead = ControlTuning.stickDeadzone
+        if r < dead {
             return (0, 0)
         }
         // Smoothstep gain on radius beyond deadzone → full throw.
-        let t = min(1, (r - stickDeadzone) / (1 - stickDeadzone))
+        let t = min(1, (r - dead) / (1 - dead))
         let gain = t * t * (3 - 2 * t)
         let scale = gain / r
         ax *= scale
@@ -227,13 +258,33 @@ final class GameEngine {
 
     // MARK: - Player movement
 
-    private var playerCanAct: Bool {
-        let p = state.player
-        return !p.dead && p.hurtTimer <= 0 && !p.attackActive && p.attackTimer <= 0
+    private func canAttack(_ p: Fighter) -> Bool {
+        !p.dead && p.hurtTimer <= 0 && !p.attackActive && p.attackTimer <= 0
     }
+
+    private var playerCanAct: Bool { canAttack(state.player) }
 
     private var playerGrounded: Bool {
         state.player.z <= groundY + 0.5 && state.player.zVel <= 0
+    }
+
+    /// Jump out of attack recovery is allowed; blocked only when dead or hurt-stunned.
+    @discardableResult
+    private func tryJump(_ p: inout Fighter) -> Bool {
+        let grounded = p.z <= groundY + 0.5 && p.zVel <= 0
+        guard grounded, !p.dead, p.hurtTimer <= 0 else { return false }
+        p.zVel = jumpVel
+        p.anim = .jump
+        p.animTime = 0
+        return true
+    }
+
+    /// Fire pending single-slot attack on the first free frame (`canAttack`).
+    private func consumePlayerAction(_ p: inout Fighter) {
+        guard canAttack(p), let action = state.actionQueue.first else { return }
+        // Do not wipe the whole queue when an attack starts — only consume the slot we take.
+        state.actionQueue.removeFirst()
+        beginAttack(&p, kind: action)
     }
 
     private func updatePlayer(dt: CGFloat) {
@@ -253,17 +304,7 @@ final class GameEngine {
         }
         if p.flash > 0 { p.flash -= dt }
 
-        // Jump
-        if state.jumpQueued {
-            state.jumpQueued = false
-            if playerGrounded && playerCanAct {
-                p.zVel = jumpVel
-                p.anim = .jump
-                p.animTime = 0
-            }
-        }
-
-        // Gravity / ground
+        // Gravity / ground first so a buffered early jump can land on this frame.
         if p.z > groundY || p.zVel > 0 {
             p.zVel -= gravity * dt
             p.z += p.zVel * dt
@@ -273,9 +314,24 @@ final class GameEngine {
             }
         }
 
+        // Jump buffer: keep trying until success or timer expires.
+        if state.jumpQueued && state.jumpBufferTimer > 0 {
+            if tryJump(&p) {
+                state.jumpQueued = false
+                state.jumpBufferTimer = 0
+            }
+        }
+        if state.jumpBufferTimer > 0 {
+            state.jumpBufferTimer -= dt
+            if state.jumpBufferTimer <= 0 {
+                state.jumpBufferTimer = 0
+                state.jumpQueued = false
+            }
+        }
+
         let grounded = p.z <= groundY + 0.5 && p.zVel <= 0
         let (mx, my) = moveAxis()
-        let movable = playerCanAct || (p.hurtTimer <= 0 && !p.dead)
+        let movable = canAttack(p) || (p.hurtTimer <= 0 && !p.dead)
 
         if movable && !p.attackActive {
             let control = grounded ? 1 : airControl
@@ -293,15 +349,15 @@ final class GameEngine {
             p.vy = approach(p.vy, targetVY, rate: rateY, dt: dt)
 
             // Facing flips only past stick threshold (avoids jitter near center).
-            if mx > facingThreshold {
+            if mx > ControlTuning.facingThreshold {
                 p.facing = 1
-            } else if mx < -facingThreshold {
+            } else if mx < -ControlTuning.facingThreshold {
                 p.facing = -1
             }
 
             let speed = hypot(p.vx, p.vy)
             if grounded && !p.attackActive && p.hurtTimer <= 0 {
-                if speed > moveAnimSpeed {
+                if speed > ControlTuning.moveAnimSpeed {
                     if p.anim != .walk {
                         p.anim = .walk
                         p.animTime = 0
@@ -322,7 +378,7 @@ final class GameEngine {
         p.y = max(laneMin, min(laneMax, p.y))
         p.x = max(40, min(state.stageWidth - 40, p.x))
 
-        // Drain attack / consume queue (combat numbers unchanged placeholders).
+        // Drain attack timer; consume single-slot queue on first free frame.
         if p.attackTimer > 0 {
             p.attackTimer -= dt
             if p.attackTimer <= 0 {
@@ -332,10 +388,10 @@ final class GameEngine {
                 p.specialHitIds = []
                 if grounded { p.anim = .idle }
             }
-        } else if playerCanAct, let action = state.actionQueue.first {
-            state.actionQueue.removeFirst()
-            beginAttack(&p, kind: action)
         }
+        // Pending press during recovery fires immediately when canAttack becomes true.
+        // Do not clear actionQueue when an attack begins (only the consumed slot).
+        consumePlayerAction(&p)
 
         p.animTime += dt
         advanceAnimFrame(&p)

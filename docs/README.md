@@ -13,6 +13,7 @@ Use this folder as the working index for design, character, asset, and shipping 
 | [CHARACTER_BIBLE.md](./CHARACTER_BIBLE.md) | JJ identity/voice, enemy stubs, combat feel, downstream flags |
 | [ASSET_TRACKER.md](./ASSET_TRACKER.md) | Pipeline notes, map/JJ/enemy/FX/UI trackers, briefing template |
 | [CHANGELOG.md](./CHANGELOG.md) | Project changelog (docs and bootstrap history) |
+| [FEELS_GOOD_CONTROLS.md](./FEELS_GOOD_CONTROLS.md) | Stick / punch / jump-kick feel checklist + tuning table |
 
 ## Quick links (repo root)
 

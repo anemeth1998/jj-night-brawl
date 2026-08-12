@@ -260,6 +260,7 @@ final class GameCanvasUIView: UIView {
 
 // MARK: - Touch controls (analog stick)
 
+/// Action pad. Touch targets must be ≥44pt (`GameEngine.ControlTuning.minTouchPt`); buttons use ≥56.
 struct TouchControlPad: View {
     var onMove: (_ x: CGFloat, _ y: CGFloat) -> Void
     var onClearMove: () -> Void
@@ -271,46 +272,68 @@ struct TouchControlPad: View {
     var showGun: Bool
 
     var body: some View {
-        VStack {
-            Spacer()
-            HStack(alignment: .bottom) {
-                VirtualStick(onMove: onMove, onClear: onClearMove)
-                    .frame(width: 140, height: 140)
-                    .padding(.leading, 28)
-                    .padding(.bottom, 18)
+        GeometryReader { geo in
+            VStack {
                 Spacer()
-                VStack(spacing: 10) {
-                    HStack(spacing: 10) {
-                        actionButton("PUNCH", onPunch)
-                        actionButton("KICK", onKick)
-                    }
-                    HStack(spacing: 10) {
-                        actionButton("JUMP", onJump)
-                        actionButton("RIFF", onSpecial)
-                    }
-                    if showGun {
-                        actionButton("GUN", onGun)
+                HStack(alignment: .bottom) {
+                    VirtualStick(onMove: onMove, onClear: onClearMove)
+                        .frame(width: 140, height: 140)
+                    Spacer()
+                    VStack(spacing: 10) {
+                        HStack(spacing: 10) {
+                            ActionPadButton(title: "PUNCH", minHeight: 56, action: onPunch)
+                            ActionPadButton(title: "KICK", minHeight: 56, action: onKick)
+                        }
+                        HStack(spacing: 10) {
+                            ActionPadButton(title: "JUMP", minHeight: 56, action: onJump)
+                            ActionPadButton(title: "RIFF", minHeight: 56, action: onSpecial)
+                        }
+                        if showGun {
+                            ActionPadButton(title: "GUN", minHeight: 56, action: onGun)
+                        }
                     }
                 }
-                .padding(.trailing, 24)
-                .padding(.bottom, 18)
+                .padding(.leading, max(16, geo.safeAreaInsets.leading + 8))
+                .padding(.trailing, max(16, geo.safeAreaInsets.trailing + 8))
+                .padding(.bottom, max(10, geo.safeAreaInsets.bottom + 6))
             }
         }
-    }
-
-    private func actionButton(_ title: String, _ action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 13, weight: .bold))
-                .frame(width: 72, height: 44)
-                .background(Color.white.opacity(0.14))
-                .foregroundColor(.white)
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.35), lineWidth: 1))
-        }
+        .allowsHitTesting(true)
     }
 }
 
-/// Analog virtual stick. Reports normalized -1...1 axes via onMove.
+/// Fire-on-press action button (DragGesture minDistance 0 — not SwiftUI Button release).
+struct ActionPadButton: View {
+    let title: String
+    var minHeight: CGFloat = 56
+    let action: () -> Void
+
+    @State private var armed = false
+
+    var body: some View {
+        Text(title)
+            .font(.system(size: 13, weight: .bold))
+            .foregroundColor(.white)
+            .frame(minWidth: 72, minHeight: max(minHeight, 44))
+            .padding(.horizontal, 6)
+            .background(Color.white.opacity(armed ? 0.28 : 0.14))
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.35), lineWidth: 1))
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        guard !armed else { return }
+                        armed = true
+                        action()
+                    }
+                    .onEnded { _ in
+                        armed = false
+                    }
+            )
+    }
+}
+
+/// Analog virtual stick. Offset is finger location relative to pad center (not DragGesture.translation).
 struct VirtualStick: View {
     var onMove: (_ x: CGFloat, _ y: CGFloat) -> Void
     var onClear: () -> Void
@@ -334,13 +357,17 @@ struct VirtualStick: View {
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
-                        apply(offset: CGSize(
-                            width: value.translation.width,
-                            height: value.translation.height
-                        ))
+                        // Position relative to stick view center — correct when finger starts off-center.
+                        let offset = CGSize(
+                            width: value.location.x - mid.x,
+                            height: value.location.y - mid.y
+                        )
+                        apply(offset: offset)
                     }
                     .onEnded { _ in
-                        drag = .zero
+                        withAnimation(.spring(response: 0.22, dampingFraction: 0.78)) {
+                            drag = .zero
+                        }
                         onClear()
                     }
             )
