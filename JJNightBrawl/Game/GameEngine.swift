@@ -10,14 +10,19 @@ final class GameEngine {
     private let laneBottom: CGFloat = 500
     private let stageWidth: CGFloat = 2800
 
-    private let playerSpeed: CGFloat = 190
-    private let playerDepthSpeed: CGFloat = 120
+    private let playerSpeed: CGFloat = 210
+    private let playerDepthSpeed: CGFloat = 135
     private let enemySpeed: CGFloat = 95
     private let enemyDepthSpeed: CGFloat = 70
 
+    /// Ground accel / decel toward target velocity (units/sec^2).
+    private let playerAccel: CGFloat = 2200
+    private let playerDecel: CGFloat = 2800
+    private let playerAirAccel: CGFloat = 1400
+
     private let jumpVel: CGFloat = 520
     private let gravity: CGFloat = 1450
-    private let airControl: CGFloat = 0.72
+    private let airControl: CGFloat = 0.78
 
     private let playerWalkFps: CGFloat = 12
     private let enemyWalkFps: CGFloat = 8
@@ -113,6 +118,33 @@ final class GameEngine {
         if let right { state.touch.right = right }
         if let up { state.touch.up = up }
         if let down { state.touch.down = down }
+        // Mirror digital pad into axes when no analog stream is driving movement.
+        if abs(state.touch.axisX) < 0.01 && abs(state.touch.axisY) < 0.01 {
+            var mx: CGFloat = 0
+            var my: CGFloat = 0
+            if state.touch.left { mx -= 1 }
+            if state.touch.right { mx += 1 }
+            if state.touch.up { my -= 1 }
+            if state.touch.down { my += 1 }
+            if mx != 0 && my != 0 {
+                let inv = 1 / sqrt(2.0 as CGFloat)
+                mx *= inv; my *= inv
+            }
+            state.touch.axisX = mx
+            state.touch.axisY = my
+        }
+    }
+
+    /// Analog move input from the virtual stick, axes in -1...1.
+    func setMoveAxis(x: CGFloat, y: CGFloat) {
+        let nx = max(-1, min(1, x))
+        let ny = max(-1, min(1, y))
+        state.touch.axisX = nx
+        state.touch.axisY = ny
+        state.touch.left = nx < -0.25
+        state.touch.right = nx > 0.25
+        state.touch.up = ny < -0.25
+        state.touch.down = ny > 0.25
     }
 
     /// Release all virtual-stick / d-pad directions (call on finger-up or phase change).
@@ -290,17 +322,38 @@ final class GameEngine {
     }
 
     private func moveAxis() -> (CGFloat, CGFloat) {
+        // Keyboard digital input wins when held; otherwise use analog stick axes.
         var mx: CGFloat = 0
         var my: CGFloat = 0
-        if pressed("left") || state.touch.left { mx -= 1 }
-        if pressed("right") || state.touch.right { mx += 1 }
-        if pressed("up") || state.touch.up { my -= 1 }
-        if pressed("down") || state.touch.down { my += 1 }
-        if mx != 0 && my != 0 {
-            let inv = 1 / sqrt(2.0 as CGFloat)
-            mx *= inv; my *= inv
+        var digital = false
+        if pressed("left") { mx -= 1; digital = true }
+        if pressed("right") { mx += 1; digital = true }
+        if pressed("up") { my -= 1; digital = true }
+        if pressed("down") { my += 1; digital = true }
+        if digital {
+            if mx != 0 && my != 0 {
+                let inv = 1 / sqrt(2.0 as CGFloat)
+                mx *= inv; my *= inv
+            }
+            return (mx, my)
         }
-        return (mx, my)
+        mx = state.touch.axisX
+        my = state.touch.axisY
+        let mag = sqrt(mx * mx + my * my)
+        if mag < 0.08 {
+            return (0, 0)
+        }
+        // Soft radial response: crawl near center, full speed at the rim.
+        let shaped = min(1, (mag - 0.08) / 0.92)
+        let gain = shaped * shaped * (3 - 2 * shaped) // smoothstep
+        return (mx / mag * gain, my / mag * gain)
+    }
+
+    private func approach(_ current: CGFloat, _ target: CGFloat, _ rate: CGFloat, _ dt: CGFloat) -> CGFloat {
+        let delta = target - current
+        let maxStep = rate * dt
+        if abs(delta) <= maxStep { return target }
+        return current + (delta > 0 ? maxStep : -maxStep)
     }
 
     private func followCamera(_ dt: CGFloat, lag: CGFloat) {
@@ -464,14 +517,28 @@ final class GameEngine {
         if canAct(state.player) || (air && state.player.attackTimer <= 0 && state.player.hurtTimer <= 0) {
             let speedMul: CGFloat = air ? airControl : 1
             if state.player.attackTimer <= 0 {
-                state.player.vx = mx * playerSpeed * speedMul
-                state.player.vy = air ? 0 : my * playerDepthSpeed
-                if mx != 0 { state.player.facing = mx > 0 ? 1 : -1 }
-                moving = !air && (mx != 0 || my != 0)
+                let targetVX = mx * playerSpeed * speedMul
+                let targetVY: CGFloat = air ? 0 : my * playerDepthSpeed
+                let accel = air ? playerAirAccel : playerAccel
+                let decel = air ? playerAirAccel : playerDecel
+                let sameDirX = (targetVX > 0) == (state.player.vx > 0) || state.player.vx == 0
+                let sameDirY = (targetVY > 0) == (state.player.vy > 0) || state.player.vy == 0
+                let rateX = (abs(targetVX) > abs(state.player.vx) || (targetVX != 0 && sameDirX)) ? accel : decel
+                let rateY = (abs(targetVY) > abs(state.player.vy) || (targetVY != 0 && sameDirY)) ? accel : decel
+                let turnX = !air && targetVX != 0 && state.player.vx != 0 && ((targetVX > 0) != (state.player.vx > 0))
+                let turnY = !air && targetVY != 0 && state.player.vy != 0 && ((targetVY > 0) != (state.player.vy > 0))
+                state.player.vx = approach(state.player.vx, targetVX, turnX ? decel * 1.35 : rateX, dt)
+                state.player.vy = approach(state.player.vy, targetVY, turnY ? decel * 1.35 : rateY, dt)
+                // Facing only flips past a real intent threshold (avoids stick jitter).
+                if mx > 0.2 { state.player.facing = 1 }
+                else if mx < -0.2 { state.player.facing = -1 }
+                let speed2 = state.player.vx * state.player.vx + state.player.vy * state.player.vy
+                moving = !air && speed2 > 30 * 30
             }
             consumePlayerAction()
         } else if state.player.attackTimer <= 0 && grounded(state.player) {
-            state.player.vx *= pow(0.05, dt)
+            state.player.vx = approach(state.player.vx, 0, playerDecel, dt)
+            state.player.vy = approach(state.player.vy, 0, playerDecel, dt)
         }
 
         state.player.x += state.player.vx * dt

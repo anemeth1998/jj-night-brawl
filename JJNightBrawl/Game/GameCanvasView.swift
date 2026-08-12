@@ -133,9 +133,17 @@ final class GameCanvasUIView: UIView {
         lastTime = now
         if dt > 0.05 { dt = 0.05 }
         if dt < 0 { dt = 1.0 / 60.0 }
+        
+        // Skip rendering if game is paused or on title screen with no animation needed
+        let shouldUpdate = assets.ready && (engine.state.phase == .playing || 
+                                           engine.state.phase == .waveClear || 
+                                           engine.state.phase == .victory ||
+                                           engine.state.particles.count > 0)
+        
         if assets.ready {
             engine.update(dt: CGFloat(dt))
         }
+        
         // Only push SwiftUI bindings when HUD-relevant values change.
         // Writing @State every frame forces layout thrash and freezes overlays.
         let s = engine.state
@@ -152,7 +160,11 @@ final class GameCanvasUIView: UIView {
             onPhaseChange?(snap.phase)
             onHudTick?(snap)
         }
-        setNeedsDisplay()
+        
+        // Only redraw when necessary
+        if shouldUpdate || snap != lastHud || engine.state.phase == .title {
+            setNeedsDisplay()
+        }
     }
 
     // MARK: - Touch (title / game-over / victory)
@@ -192,9 +204,12 @@ final class GameCanvasUIView: UIView {
         ctx.interpolationQuality = .none
 
         if assets.ready {
-            GameRenderer.render(ctx: ctx, state: engine.state, assets: assets)
             let phase = engine.state.phase
             let now = CACurrentMediaTime()
+            // Full-bleed title art replaces the world; otherwise draw the stage first.
+            if phase != .title || assets.titleScreen == nil {
+                GameRenderer.render(ctx: ctx, state: engine.state, assets: assets)
+            }
             switch phase {
             case .title:
                 GameRenderer.drawTitle(ctx: ctx, assets: assets, now: now)
@@ -420,7 +435,12 @@ struct ContentView: View {
                     topBar
                     Spacer(minLength: 0)
                         .allowsHitTesting(false)
-                    if showsMenuButton {
+                    // Title uses on-canvas "TAP TO START" + full-screen/canvas taps.
+                    // Keep a large invisible hit target at the bottom for reliability.
+                    if phase == .title && bridge.assetsReady {
+                        titleTapStrip
+                            .padding(.bottom, max(8, geo.safeAreaInsets.bottom))
+                    } else if showsMenuButton {
                         menuButton
                             .padding(.bottom, 8)
                             .opacity(bridge.assetsReady ? 1 : 0.45)
@@ -431,8 +451,8 @@ struct ContentView: View {
                             landscape: landscape,
                             hasGun: hasGun,
                             specialReady: special >= 40,
-                            onMove: { left, right, up, down in
-                                bridge.engine?.setTouch(left: left, right: right, up: up, down: down)
+                            onMove: { x, y in
+                                bridge.engine?.setMoveAxis(x: x, y: y)
                             },
                             onClearMove: {
                                 bridge.engine?.clearTouch()
@@ -502,6 +522,23 @@ struct ContentView: View {
         .padding(.top, 8)
     }
 
+    /// Wide bottom strip on title — matches "TAP TO START" and starts the game.
+    private var titleTapStrip: some View {
+        Button {
+            if bridge.startGame() {
+                phase = .playing
+            }
+        } label: {
+            // Visual prompt is drawn on the canvas; this is the reliable hit target.
+            Color.clear
+                .frame(maxWidth: .infinity)
+                .frame(height: 88)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Tap to start")
+    }
+
     private var menuButton: some View {
         Button {
             if bridge.startGame() {
@@ -509,7 +546,7 @@ struct ContentView: View {
                 phase = .playing
             }
         } label: {
-            Text(phase == .title ? "START BRAWL" : (phase == .victory ? "PLAY AGAIN" : "RETRY"))
+            Text(phase == .victory ? "PLAY AGAIN" : "RETRY")
                 .font(.system(size: 18, weight: .heavy))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 32)
@@ -534,7 +571,7 @@ private struct TouchControlPad: View {
     var landscape: Bool
     var hasGun: Bool
     var specialReady: Bool
-    var onMove: (_ left: Bool, _ right: Bool, _ up: Bool, _ down: Bool) -> Void
+    var onMove: (_ x: CGFloat, _ y: CGFloat) -> Void
     var onClearMove: () -> Void
     var onAction: (TouchAction) -> Void
 
@@ -596,14 +633,13 @@ private struct TouchControlPad: View {
 // MARK: - Virtual analog stick
 
 private struct VirtualStick: View {
-    var onMove: (_ left: Bool, _ right: Bool, _ up: Bool, _ down: Bool) -> Void
+    var onMove: (_ x: CGFloat, _ y: CGFloat) -> Void
     var onClear: () -> Void
 
     @State private var knob: CGSize = .zero
     @State private var dragging = false
 
     private let radius: CGFloat = 56
-    private let dead: CGFloat = 14
 
     var body: some View {
         ZStack {
@@ -672,11 +708,10 @@ private struct VirtualStick: View {
     }
 
     private func apply(_ o: CGSize) {
-        let left = o.width < -dead
-        let right = o.width > dead
-        let up = o.height < -dead
-        let down = o.height > dead
-        onMove(left, right, up, down)
+        // Normalize to -1...1 from stick radius; dead zone / shaping live in the engine.
+        let x = max(-1, min(1, o.width / radius))
+        let y = max(-1, min(1, o.height / radius))
+        onMove(x, y)
     }
 }
 

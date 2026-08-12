@@ -162,10 +162,18 @@ enum GameRenderer {
         ctx.fillPath()
         ctx.restoreGState()
 
-        // Riff glow
+        // Riff glow + soft halo for dark-street silhouette readability
         if f.kind == .player && f.attackKind == .special {
             ctx.saveGState()
-            ctx.setFillColor(UIColor(red: 1, green: 0.18, blue: 0.54, alpha: 0.35).cgColor)
+            // Outer halo
+            ctx.setFillColor(UIColor(red: 1, green: 0.75, blue: 0.9, alpha: 0.22).cgColor)
+            ctx.addEllipse(in: CGRect(x: f.x - camX - drawW * 0.7,
+                                      y: dy - drawH * 0.05,
+                                      width: drawW * 1.4,
+                                      height: drawH * 1.15))
+            ctx.fillPath()
+            // Inner brand glow
+            ctx.setFillColor(UIColor(red: 1, green: 0.18, blue: 0.54, alpha: 0.4).cgColor)
             ctx.addEllipse(in: CGRect(x: f.x - camX - drawW * 0.55,
                                       y: dy + drawH * 0.1,
                                       width: drawW * 1.1,
@@ -181,7 +189,17 @@ enum GameRenderer {
         }
 
         let flip = f.facing < 0
-        sheet.draw(in: ctx, frame: f.animFrame, dest: CGRect(x: dx, y: dy, width: drawW, height: drawH), flipX: flip)
+        let dest = CGRect(x: dx, y: dy, width: drawW, height: drawH)
+        sheet.draw(in: ctx, frame: f.animFrame, dest: dest, flipX: flip)
+        // Hit flash: tint only sprite coverage (sourceAtop), never a solid white box.
+        if f.flash > 0 {
+            ctx.saveGState()
+            let a = min(1, f.flash / 0.12) * 0.7
+            ctx.setBlendMode(.sourceAtop)
+            ctx.setFillColor(UIColor.white.withAlphaComponent(a).cgColor)
+            ctx.fill(dest)
+            ctx.restoreGState()
+        }
         ctx.setAlpha(1)
 
         // Enemy overhead health bar (always visible while alive)
@@ -549,6 +567,29 @@ enum GameRenderer {
     // MARK: - Overlays
 
     static func drawTitle(ctx: CGContext, assets: GameAssets, now: CFTimeInterval) {
+        // Prefer full-bleed title art when present (imported title_screen asset).
+        if let art = assets.titleScreen {
+            drawAspectFill(ctx: ctx, image: art, in: CGRect(x: 0, y: 0, width: viewW, height: viewH))
+            // Soft bottom vignette so TAP TO START stays readable.
+            let gradH: CGFloat = 120
+            let colors = [
+                UIColor(red: 0.02, green: 0.01, blue: 0.04, alpha: 0).cgColor,
+                UIColor(red: 0.02, green: 0.01, blue: 0.04, alpha: 0.78).cgColor
+            ] as CFArray
+            if let space = CGColorSpace(name: CGColorSpace.sRGB),
+               let grad = CGGradient(colorsSpace: space, colors: colors, locations: [0, 1]) {
+                ctx.drawLinearGradient(
+                    grad,
+                    start: CGPoint(x: viewW / 2, y: viewH - gradH),
+                    end: CGPoint(x: viewW / 2, y: viewH),
+                    options: []
+                )
+            }
+            drawTapToStart(ctx: ctx, now: now, y: viewH - 52)
+            return
+        }
+
+        // Fallback procedural title (no title_screen asset).
         ctx.setFillColor(UIColor(red: 0.03, green: 0.02, blue: 0.06, alpha: 0.62).cgColor)
         ctx.fill(CGRect(x: 0, y: 0, width: viewW, height: viewH))
 
@@ -569,12 +610,7 @@ enum GameRenderer {
             .font: UIFont.systemFont(ofSize: 13),
             .foregroundColor: UIColor(red: 0.66, green: 0.61, blue: 0.72, alpha: 1)
         ])
-        ("Tap START or press Enter" as NSString).draw(at: CGPoint(x: 60, y: 220), withAttributes: [
-            .font: UIFont.boldSystemFont(ofSize: 15),
-            .foregroundColor: UIColor(red: 0.18, green: 0.89, blue: 0.9, alpha: 0.65 + 0.35 * sin(now * 3))
-        ])
 
-        // Portrait
         if let por = assets.jjPortrait {
             let ps: CGFloat = 96
             let px = viewW - 48 - ps
@@ -592,7 +628,6 @@ enum GameRenderer {
             ctx.restoreGState()
         }
 
-        // Idle character — never force-unwrap (missing assets used to crash → white screen)
         if let idle = assets.jjIdle {
             let drawH: CGFloat = 220
             let drawW = drawH * (idle.frameW / max(1, idle.frameH))
@@ -601,6 +636,50 @@ enum GameRenderer {
                       dest: CGRect(x: viewW - 170 - drawW / 2, y: viewH - 64 - drawH, width: drawW, height: drawH),
                       flipX: false)
         }
+        drawTapToStart(ctx: ctx, now: now, y: viewH - 52)
+    }
+
+    /// Aspect-fill image into `rect` (centered crop).
+    private static func drawAspectFill(ctx: CGContext, image: UIImage, in rect: CGRect) {
+        let iw = max(1, image.size.width)
+        let ih = max(1, image.size.height)
+        let scale = max(rect.width / iw, rect.height / ih)
+        let dw = iw * scale
+        let dh = ih * scale
+        let dest = CGRect(
+            x: rect.midX - dw / 2,
+            y: rect.midY - dh / 2,
+            width: dw,
+            height: dh
+        )
+        ctx.saveGState()
+        ctx.clip(to: rect)
+        ctx.interpolationQuality = .none
+        image.draw(in: dest)
+        ctx.restoreGState()
+    }
+
+    private static func drawTapToStart(ctx: CGContext, now: CFTimeInterval, y: CGFloat) {
+        let pulse = 0.72 + 0.28 * sin(now * 3.2)
+        let label = "TAP TO START" as NSString
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.boldSystemFont(ofSize: 22),
+            .foregroundColor: UIColor(red: 1, green: 0.18, blue: 0.54, alpha: pulse)
+        ]
+        let sz = label.size(withAttributes: attrs)
+        // Subtle pill behind the prompt
+        let padX: CGFloat = 22
+        let padY: CGFloat = 10
+        let pill = CGRect(
+            x: (viewW - sz.width) / 2 - padX,
+            y: y - padY,
+            width: sz.width + padX * 2,
+            height: sz.height + padY * 2
+        )
+        roundRect(ctx, pill, r: 18,
+                  fill: UIColor(red: 0.04, green: 0.02, blue: 0.07, alpha: 0.72),
+                  stroke: UIColor(red: 1, green: 0.18, blue: 0.54, alpha: 0.55 * pulse))
+        label.draw(at: CGPoint(x: (viewW - sz.width) / 2, y: y), withAttributes: attrs)
     }
 
     static func drawBanner(ctx: CGContext, title: String, subtitle: String) {

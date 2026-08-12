@@ -112,6 +112,8 @@ final class GameAssets {
     private(set) var jjSmoke: SpriteSheet?
     private(set) var jjVictory: SpriteSheet?
     private(set) var jjPortrait: UIImage?
+    /// Full-bleed title art (optional). When present, replaces the procedural title card.
+    private(set) var titleScreen: UIImage?
 
     private var enemySheets: [String: SpriteSheet] = [:]
     private(set) var sky: UIImage?
@@ -148,8 +150,9 @@ final class GameAssets {
         let skyImg = UIImage(named: "map_sky")
         let farImg = UIImage(named: "map_far")
         let midImg = UIImage(named: "map_mid")
+        let titleImg = UIImage(named: "title_screen")
         let isReady = idle != nil && walk != nil
-        print("[JJ] assets load stripChroma=\(stripChroma) ready=\(isReady) idle=\(idle != nil) walk=\(walk != nil) enemies=\(enemies.count) dt=\(String(format: "%.3f", CFAbsoluteTimeGetCurrent() - t0))s")
+        print("[JJ] assets load stripChroma=\(stripChroma) ready=\(isReady) idle=\(idle != nil) walk=\(walk != nil) title=\(titleImg != nil) enemies=\(enemies.count) dt=\(String(format: "%.3f", CFAbsoluteTimeGetCurrent() - t0))s")
 
         let publish = { [weak self] in
             guard let self else { return }
@@ -163,6 +166,7 @@ final class GameAssets {
             self.jjSmoke = smoke
             self.jjVictory = victory
             self.jjPortrait = portrait
+            self.titleScreen = titleImg
             self.enemySheets = enemies
             self.impact = impactSheet
             self.sky = skyImg
@@ -187,18 +191,11 @@ final class GameAssets {
                 DispatchQueue.main.async(execute: onDone)
                 return
             }
-            // Pass 1: show the game ASAP (catalog PNGs are pre-keyed transparent).
-            self.load(stripChroma: false)
+            // Pass 1: Load with chroma stripping enabled - the pink boxes indicate we need this
+            // Pre-keyed assets won't be affected, but raw exports will be cleaned
+            self.load(stripChroma: true)
             DispatchQueue.main.async {
                 onDone()
-            }
-            // Pass 2 (optional polish): re-key pink leftovers without freezing first frame.
-            DispatchQueue.global(qos: .utility).async { [weak self] in
-                guard let self else { return }
-                self.load(stripChroma: true)
-                DispatchQueue.main.async {
-                    // No extra onDone — UI already interactive; redraw will pick up sheets.
-                }
             }
         }
     }

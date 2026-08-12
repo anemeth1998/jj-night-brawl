@@ -28,22 +28,29 @@ final class GameAudio {
 
     private func unlockOnMain() {
         guard !started else { return }
+        let session = AVAudioSession.sharedInstance()
         do {
-            let session = AVAudioSession.sharedInstance()
             try session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
             try session.setActive(true)
+        } catch {
+            print("[JJ] audio unlock failed: \(error.localizedDescription)")
+            return
+        }
+        
+        // Continue setup on main thread
+        do {
             let eng = AVAudioEngine()
-            engine = eng
-            mainMixer = eng.mainMixerNode
+            self.engine = eng
+            self.mainMixer = eng.mainMixerNode
             // Touch the graph so the output format is valid before first buffer.
             _ = eng.mainMixerNode
             eng.prepare()
             try eng.start()
-            started = true
-            mainMixer?.outputVolume = muted ? 0 : 0.7
+            self.started = true
+            self.mainMixer?.outputVolume = self.muted ? 0 : 0.7
         } catch {
             // Audio optional — never crash the game loop for SFX.
-            print("[JJ] audio unlock failed: \(error.localizedDescription)")
+            print("[JJ] audio engine start failed: \(error.localizedDescription)")
         }
     }
 
