@@ -11,3 +11,6 @@ If you still have JJNightBrawl-FOR-XCODE.tar.gz on a device or in chat downloads
 
 ## Preferred sheet files
 Use **/sheet-transparent.png for runtime. Raw sheets are optional source art.
+
+
+Latest playable web snapshot: branch `backup/web-playable-20260812` (2026-08-12).

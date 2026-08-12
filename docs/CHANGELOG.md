@@ -21,3 +21,14 @@ All notable project-level notes for this repo. Gameplay versioning can split lat
 - Root docs: `README.md`, `ASSET_MANIFEST.md`, `BACKUP_NOTES.md`, `HOW_TO_ADD_BINARIES.md`
 - Partial iOS stubs / sync notes under `ios/`
 - Note: full Swift/Xcode source and complete web engine not fully restored in-repo
+
+## 2026-08-12 — Playable web backup
+
+- Full title screen (`assets/ui/title-screen.png`)
+- Menu Select brick-wall loop (`assets/ui/menu-select-loop.mp4`)
+- Roster: JJ, Andrew, Han (Ash/Rex removed)
+- Andrew hover: sit + laptop (`assets/ui/andrew-hover.mp4`)
+- Han hover: phone (`assets/ui/han-hover.mp4`)
+- Idle/walk sprites under `assets/sprites/andrew` and `assets/sprites/han`
+- Latest canvas/menu source in `web/src/game/`
+- Full playable snapshot on branch `backup/web-playable-20260812`
