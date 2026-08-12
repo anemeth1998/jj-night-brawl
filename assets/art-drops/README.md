@@ -14,14 +14,12 @@
 
 ## Binaries in git (2026-08-12)
 
-JPG stills live next to this README. The original `05-backups/art-drops-characters-cutscenes-2026-08-12.tar.gz` was not on the Mac; files were sorted from today's `Downloads/imagine-*.jpg` drop.
+Unpacked from `art-drops-characters-cutscenes-2026-08-12.tar.gz`.
 
-| Path | In git | Notes |
-|---|---|---|
-| `characters/jj/` | 22 / 22 | Complete |
-| `characters/andrew/` | 13 / 13 | Complete |
-| `characters/han/` | 1 / 14 | Only `front-stance.jpg` |
-| `characters/group/` | 2 / 2 | Complete |
-| `cutscenes/` | 0 / 5 | Still only listed in `FILE_LIST.txt` |
-
-To finish Han + cutscenes: unpack the 9.3 MB tar from the Grok project `05-backups/` over this folder, then commit the missing JPGs.
+| Path | In git |
+|---|---|
+| `characters/jj/` | 22 / 22 |
+| `characters/andrew/` | 13 / 13 |
+| `characters/han/` | 14 / 14 |
+| `characters/group/` | 2 / 2 |
+| `cutscenes/` | 5 / 5 |
