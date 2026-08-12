@@ -7,7 +7,6 @@ final class GameBridge: ObservableObject {
     let engine = GameEngine()
     let assets = GameAssets()
     let audio = GameAudio()
-    let renderer = GameRenderer()
 
     @Published var phase: GamePhase = .title
     @Published var specialMeter: CGFloat = 0
@@ -215,12 +214,14 @@ final class GameCanvasUIView: UIView {
 
     override func draw(_ rect: CGRect) {
         guard let ctx = UIGraphicsGetCurrentContext() else { return }
-        bridge.renderer.draw(
-            context: ctx,
-            rect: bounds,
-            state: bridge.engine.state,
-            assets: bridge.assets
-        )
+        let state = bridge.engine.state
+        // Mac GameRenderer is an enum with static entry points (not an instance).
+        if state.phase == .title {
+            // CG title art under existing SwiftUI titleOverlay — smallest compile-safe wire.
+            GameRenderer.drawTitle(ctx: ctx, assets: bridge.assets, now: CACurrentMediaTime())
+        } else {
+            GameRenderer.render(ctx: ctx, state: state, assets: bridge.assets)
+        }
     }
 
     // Keyboard (Simulator / external)
