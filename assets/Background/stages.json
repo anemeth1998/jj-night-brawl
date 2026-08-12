@@ -1,0 +1,72 @@
+[
+  {
+    "id": "downtown",
+    "title": "Downtown Junction City",
+    "subtitle": "Washington Street after midnight",
+    "wave": "Waves 1\u20132",
+    "blurb": "Brick storefronts, wet asphalt, and the first night of the brawl.",
+    "new": false,
+    "layers": {
+      "sky": "/stages/downtown/sky.png",
+      "far-bg": "/stages/downtown/far-bg.png",
+      "mid-bg": "/stages/downtown/mid-bg.png"
+    },
+    "preview": "/stages/downtown/preview.png"
+  },
+  {
+    "id": "opera-alley",
+    "title": "Hoover Opera Alley",
+    "subtitle": "C.L. Hoover Opera House \u00b7 7th Street",
+    "wave": "Wave 3",
+    "blurb": "Clock tower, pink marquee, and a brick alley that does not want you here.",
+    "new": true,
+    "layers": {
+      "sky": "/stages/opera-alley/sky.png",
+      "far-bg": "/stages/opera-alley/far-bg.png",
+      "mid-bg": "/stages/opera-alley/mid-bg.png"
+    },
+    "preview": "/stages/opera-alley/preview.png"
+  },
+  {
+    "id": "geary-strip",
+    "title": "Geary Blvd Strip",
+    "subtitle": "Sodium lights \u00b7 empty lot",
+    "wave": "Wave 4",
+    "blurb": "Gas canopy, diner neon, and a wide slab of asphalt made for a rumble.",
+    "new": true,
+    "layers": {
+      "sky": "/stages/geary-strip/sky.png",
+      "far-bg": "/stages/geary-strip/far-bg.png",
+      "mid-bg": "/stages/geary-strip/mid-bg.png"
+    },
+    "preview": "/stages/geary-strip/preview.png"
+  },
+  {
+    "id": "train-yard",
+    "title": "Yard & Overpass",
+    "subtitle": "I-70 \u00b7 freight siding",
+    "wave": "Wave 5",
+    "blurb": "Boxcars, chain-link, and the interstate hanging over the fight.",
+    "new": true,
+    "layers": {
+      "sky": "/stages/train-yard/sky.png",
+      "far-bg": "/stages/train-yard/far-bg.png",
+      "mid-bg": "/stages/train-yard/mid-bg.png"
+    },
+    "preview": "/stages/train-yard/preview.png"
+  },
+  {
+    "id": "water-tower",
+    "title": "Water Tower Roof",
+    "subtitle": "Above the prairie town",
+    "wave": "Boss",
+    "blurb": "Tar roof, steel legs, and the whole town watching from below.",
+    "new": true,
+    "layers": {
+      "sky": "/stages/water-tower/sky.png",
+      "far-bg": "/stages/water-tower/far-bg.png",
+      "mid-bg": "/stages/water-tower/mid-bg.png"
+    },
+    "preview": "/stages/water-tower/preview.png"
+  }
+]

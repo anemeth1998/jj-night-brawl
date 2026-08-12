@@ -1,14 +1,26 @@
-# Asset manifest (workspace backup)
+# Asset manifest
 
-Binary PNGs/GIFs (~1.7MB total) are **not** stored in this repo via the text connector.
+## Background stages (in git)
 
-They are packaged as:
-- `jj-night-brawl-assets-backup.tar.gz` (download from Grok project artifacts)
+All night parallax plates live in **`assets/Background/`**.
 
-## Layout under jj-night-brawl/
+| Folder | Stage | Wave |
+|---|---|---|
+| `assets/Background/downtown/` | Downtown Junction City | 1–2 |
+| `assets/Background/opera-alley/` | Hoover Opera Alley | 3 |
+| `assets/Background/geary-strip/` | Geary Blvd Strip | 4 |
+| `assets/Background/train-yard/` | Yard & Overpass | 5 |
+| `assets/Background/water-tower/` | Water Tower Roof | Boss |
 
-### Map
-- map/sky.png, far-bg.png, mid-bg.png
+Each stage: `sky.png`, `far-bg.png`, `mid-bg.png`, `preview.png` (1536×864).
+
+Downtown trio is also at `assets/map/` for the current iOS loader (`map_sky` / `map_far` / `map_mid`).
+
+See [`assets/Background/README.md`](assets/Background/README.md).
+
+## Sprites (still external / tracker)
+
+Binary PNGs/GIFs for fighters may still live in `jj-night-brawl-assets-backup.tar.gz` until restored.
 
 ### JJ sprites
 - sprites/jj/idle|walk|attack|hurt/sheet-transparent.png (+ frames, meta)
@@ -19,16 +31,3 @@ They are packaged as:
 
 ### FX
 - sprites/fx/sheet-transparent.png
-
-## Restore onto this repo (on a Mac)
-
-```bash
-tar -xzf jj-night-brawl-assets-backup.tar.gz
-cd jj-night-brawl
-git clone https://github.com/anemeth1998/jj-night-brawl.git
-cp -R map sprites ../jj-night-brawl/assets/
-cd ../jj-night-brawl
-git add assets
-git commit -m "Add binary sprite and map assets"
-git push
-```

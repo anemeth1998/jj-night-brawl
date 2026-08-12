@@ -6,30 +6,35 @@
 |------|------------|
 | Runtime sheet | Prefer `sheet-transparent.png` (magenta keyed) |
 | Meta | `pipeline-meta.json` beside each sheet — grid / cell size / frame labels |
-| Binary backup | External tar: `jj-night-brawl-assets-backup.tar.gz` (not in git via text connector) |
+| Background plates | `assets/Background/<stage>/{sky,far-bg,mid-bg}.png` — 1536×864 |
 | Land into repo | See [HOW_TO_ADD_BINARIES.md](../HOW_TO_ADD_BINARIES.md) and [ASSET_MANIFEST.md](../ASSET_MANIFEST.md) |
-| Raw sheets | Optional source art; runtime uses transparent sheets |
 
-Expected layout after restore:
+Expected layout:
 
 ```
 assets/
-  map/          sky.png, far-bg.png, mid-bg.png
+  Background/
+    downtown/       sky, far-bg, mid-bg, preview
+    opera-alley/
+    geary-strip/
+    train-yard/
+    water-tower/
+  map/              downtown trio alias for current iOS loader
   sprites/
-    jj/         idle|walk|attack|hurt (+ reference)
-    enemy/      idle|walk|attack
-    fx/         impact sheet
+    jj/             idle|walk|attack|hurt (+ reference)
+    enemy/          idle|walk|attack
+    fx/             impact sheet
 ```
 
-Meta example fields: `mode`, `rows`, `cols`, `cell_size`, `frame_labels`, `source`.
+## Map / Background tracker
 
-## Map tracker
-
-| Asset | Path | In git | Notes | Status |
-|-------|------|--------|-------|--------|
-| Sky | `assets/map/sky.png` | No | External tar | 🟡 recovered ext. |
-| Far BG | `assets/map/far-bg.png` | No | External tar | 🟡 recovered ext. |
-| Mid BG | `assets/map/mid-bg.png` | No | External tar | 🟡 recovered ext. |
+| Asset | Path | In git | Status |
+|-------|------|--------|--------|
+| Downtown sky/far/mid | `assets/Background/downtown/` + `assets/map/` | Yes | 🟢 |
+| Hoover Opera Alley | `assets/Background/opera-alley/` | Yes | 🟢 |
+| Geary Blvd Strip | `assets/Background/geary-strip/` | Yes | 🟢 |
+| Yard & Overpass | `assets/Background/train-yard/` | Yes | 🟢 |
+| Water Tower Roof | `assets/Background/water-tower/` | Yes | 🟢 |
 
 ## JJ tracker
 
@@ -76,23 +81,3 @@ Meta example fields: `mode`, `rows`, `cols`, `cell_size`, `frame_labels`, `sourc
 | Gun shot | Not started | 🔴 |
 | Wave clear / smoke ambience | Not started | 🔴 |
 | Music bed | Not started | 🔴 |
-
-## Briefing template
-
-Copy for new art / SFX requests:
-
-```markdown
-### Brief: <asset name>
-
-- **Owner:**
-- **Type:** sprite sheet | map layer | FX | UI | SFX | music
-- **Path target:** `assets/...`
-- **Dimensions / grid:** e.g. 2×2 @ 128, or single PNG
-- **Magenta key:** yes / no
-- **pipeline-meta.json:** required fields / frame labels
-- **References:** link or `sprites/jj/reference.jpg`
-- **Gameplay use:** idle | walk | attack | hurt | UI slot | etc.
-- **Priority:** P0 / P1 / P2
-- **Acceptance:** transparent sheet + meta + looks correct in-engine
-- **Status:** 🔴 / 🟡 / 🟢
-```
