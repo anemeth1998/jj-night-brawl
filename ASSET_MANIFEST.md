@@ -18,9 +18,27 @@ Downtown trio is also at `assets/map/` for the current iOS loader (`map_sky` / `
 
 See [`assets/Background/README.md`](assets/Background/README.md).
 
-## Sprites (still external / tracker)
+## Art drops — character poses + cutscenes (2026-08-12)
 
-Binary PNGs/GIFs for fighters may still live in `jj-night-brawl-assets-backup.tar.gz` until restored.
+Text index is in git under [`assets/art-drops/`](assets/art-drops/). **JPG binaries** ship in:
+
+`art-drops-characters-cutscenes-2026-08-12.tar.gz` (Grok project `05-backups/`)
+
+Unpack to `assets/art-drops/` then commit (see that folder’s README).
+
+| Path | Count | Who |
+|---|---|---|
+| `characters/jj/` | 22 | JJ (pink/black hair punk) |
+| `characters/andrew/` | 13 | Andrew (striped hoodie) |
+| `characters/han/` | 14 | Han (cat beanie) |
+| `characters/group/` | 2 | Trio shots |
+| `cutscenes/` | 5 | Story stills |
+
+Matched pose sheet (Andrew + Han): front-idle, kneel, crouch, sit-cross-legged, walk, run, jump-fists, punch, over-shoulder, back, look-up, peace-stand, closeup-peace. JJ has extra action / personality poses.
+
+## Sprites (fighter sheets)
+
+Binary PNGs/GIFs for in-engine fighters may still live in `jj-night-brawl-assets-backup.tar.gz` until restored.
 
 ### JJ sprites
 - sprites/jj/idle|walk|attack|hurt/sheet-transparent.png (+ frames, meta)
