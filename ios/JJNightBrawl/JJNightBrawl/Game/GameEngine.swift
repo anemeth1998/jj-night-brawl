@@ -492,6 +492,7 @@ final class GameEngine {
         p.animTime = 0
         state.shake = max(state.shake, 0.25)
         state.hitStop = 0.05
+        onSfx?("hurt")
         if p.hp <= 0 {
             p.hp = 0
             p.dead = true
@@ -499,6 +500,7 @@ final class GameEngine {
             state.phase = .gameover
             state.message = "GAME OVER"
             state.messageTimer = 99
+            onSfx?("ko")
         }
         state.player = p
         spawnImpact(x: p.x, y: p.y - p.z)
@@ -537,12 +539,14 @@ final class GameEngine {
                 state.shake = max(state.shake, 0.2)
                 state.hitStop = kind == .special ? 0.08 : 0.04
                 spawnImpact(x: e.x, y: e.y - e.z)
+                onSfx?("hurt")
                 if e.hp <= 0 {
                     e.hp = 0
                     e.dead = true
                     e.anim = .dead
                     state.score += e.scoreValue
                     state.waveEnemiesLeft = max(0, state.waveEnemiesLeft - 1)
+                    onSfx?("ko")
                 }
                 state.enemies[i] = e
             }
@@ -573,11 +577,13 @@ final class GameEngine {
                     e.hurtTimer = 0.25
                     e.flash = 0.12
                     b.hitIds.append(e.id)
+                    onSfx?("hurt")
                     if e.hp <= 0 {
                         e.dead = true
                         e.anim = .dead
                         state.score += e.scoreValue
                         state.waveEnemiesLeft = max(0, state.waveEnemiesLeft - 1)
+                        onSfx?("ko")
                         if state.hasGun {
                             state.speechBubble = SpeechBubble(
                                 text: "Counting or not counting gang violence?",
@@ -638,11 +644,14 @@ final class GameEngine {
                 state.player.anim = .victory
                 state.message = "NIGHT CLEARED"
                 state.messageTimer = 99
+                onSfx?("victory")
             } else {
                 state.phase = .waveClear
                 state.message = "WAVE CLEAR"
                 state.messageTimer = 1.6
                 state.smokePuffTimer = 1.6
+                onSfx?("waveClear")
+                onSfx?("smoke")
             }
         }
 
