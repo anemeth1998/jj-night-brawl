@@ -41,6 +41,7 @@ export function isAudioUnlocked() {
 export function setMuted(next: boolean) {
   muted = next;
   if (master) master.gain.value = muted ? 0 : 0.55;
+  if (theme) theme.el.volume = muted || theme.el.paused ? 0 : THEME_VOL;
 }
 
 export function toggleMute(): boolean {
@@ -476,6 +477,7 @@ export function playTrack(id: string) {
   const track = TRACKS.find((t) => t.id === id);
   if (!track) return;
   stopTrack();
+  fadeOutMenuTheme(250);
   jukeId = id;
   let i = 0;
   const tick = () => {
@@ -487,3 +489,93 @@ export function playTrack(id: string) {
   tick();
   jukeHandle = window.setInterval(tick, 280);
 }
+
+/** Title → menu 8-bit theme. Module singleton so screen changes never restart it. */
+const THEME_SRC = "/assets/audio/tdm-8bit.mp3";
+const THEME_VOL = 0.58;
+
+type ThemeHandle = {
+  el: HTMLAudioElement;
+  fadeRaf: number | null;
+};
+
+let theme: ThemeHandle | null = null;
+
+function ensureTheme() {
+  if (typeof window === "undefined") return null;
+  if (!theme) {
+    const el = new Audio(THEME_SRC);
+    el.loop = true;
+    el.preload = "auto";
+    el.volume = muted ? 0 : THEME_VOL;
+    el.setAttribute("playsinline", "true");
+    el.dataset.role = "menu-theme";
+    if (document.body) document.body.appendChild(el);
+    theme = { el, fadeRaf: null };
+  }
+  return theme;
+}
+
+export function isThemePlaying() {
+  return Boolean(theme && !theme.el.paused && !theme.el.ended);
+}
+
+export function playMenuTheme() {
+  void unlockAudio();
+  const handle = ensureTheme();
+  if (!handle) return;
+  if (handle.fadeRaf != null) {
+    cancelAnimationFrame(handle.fadeRaf);
+    handle.fadeRaf = null;
+  }
+  handle.el.volume = muted ? 0 : THEME_VOL;
+  if (!handle.el.paused && !handle.el.ended) return;
+  const play = handle.el.play();
+  if (play) void play.catch(() => {});
+}
+
+export function fadeOutMenuTheme(ms = 700) {
+  const handle = theme;
+  if (!handle || handle.el.paused) return;
+  if (handle.fadeRaf != null) cancelAnimationFrame(handle.fadeRaf);
+  const start = handle.el.volume;
+  const t0 = performance.now();
+  const step = (now: number) => {
+    const t = Math.min(1, (now - t0) / ms);
+    handle.el.volume = start * (1 - t);
+    if (t < 1) {
+      handle.fadeRaf = requestAnimationFrame(step);
+      return;
+    }
+    handle.fadeRaf = null;
+    handle.el.pause();
+  };
+  handle.fadeRaf = requestAnimationFrame(step);
+}
+
+export function fadeInMenuTheme(ms = 500) {
+  void unlockAudio();
+  const handle = ensureTheme();
+  if (!handle) return;
+  if (handle.fadeRaf != null) {
+    cancelAnimationFrame(handle.fadeRaf);
+    handle.fadeRaf = null;
+  }
+  const target = muted ? 0 : THEME_VOL;
+  handle.el.volume = 0;
+  const play = handle.el.play();
+  if (play) void play.catch(() => {});
+  const t0 = performance.now();
+  const step = (now: number) => {
+    const t = Math.min(1, (now - t0) / ms);
+    handle.el.volume = target * t;
+    if (t < 1) {
+      handle.fadeRaf = requestAnimationFrame(step);
+      return;
+    }
+    handle.fadeRaf = null;
+    handle.el.volume = target;
+  };
+  handle.fadeRaf = requestAnimationFrame(step);
+}
+

@@ -10,6 +10,7 @@ This commit backs up the **art/assets** recovered from the project workspace:
 - `assets/sprites/jj/` — protagonist sheets (idle, walk, attack, hurt)
 - `assets/sprites/enemy/` — enemy sheets (idle, walk, attack)
 - `assets/sprites/fx/` — impact FX
+- `assets/audio/tdm-8bit.mp3` — title / menu 8-bit theme (loops title → menu)
 
 Game-ready sheets are named `sheet-transparent.png` (magenta keyed).
 `pipeline-meta.json` files record sheet grid / frame info.

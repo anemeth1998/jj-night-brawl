@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { AssetMap, LoadedSheet } from "./assets";
-import { currentTrack, playTrack, sfx, stopTrack, TRACKS } from "./audio";
+import { currentTrack, playTrack, playMenuTheme, sfx, stopTrack, TRACKS } from "./audio";
 import {
   ACHIEVEMENTS,
   CHARACTERS,
@@ -107,6 +107,10 @@ export function MainMenu({
 }) {
   const last = lastPlayedSlot(profile);
   const items = NAV;
+
+  useEffect(() => {
+    playMenuTheme();
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #07060c;
+  --color-night: #0c0a14;
+  --color-surface: #16111f;
+  --color-panel: #1c1528;
+  --color-fg: #f6eef8;
+  --color-muted: #9a8ca8;
+  --color-hot: #ff2d8a;
+  --color-hot-dim: #c41a68;
+  --color-cyan: #3ee8e0;
+  --color-gold: #f4c84a;
+  --color-line: #3a2a48;
+  --font-display: "Press Start 2P", ui-monospace, monospace;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --radius-panel: 0.75rem;
+}
+
+@layer base {
+  html,
+  body,
+  #app {
+    height: 100%;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: var(--color-ink);
+    color: var(--color-fg);
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    font-family: var(--font-sans);
+    background: var(--color-ink);
+    color: var(--color-fg);
+    overflow: hidden;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+}
+
+@keyframes press-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    text-shadow: 0 0 0 transparent;
+  }
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 18px color-mix(in oklab, var(--color-cyan) 70%, transparent);
+  }
+}
+
+.press-start {
+  animation: press-pulse 1.35s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .press-start {
+    animation: none;
+    opacity: 1;
+  }
+}

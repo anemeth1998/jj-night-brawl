@@ -14,7 +14,7 @@ import {
 } from "./engine";
 import type { AttackKind, GameState } from "./types";
 import { loadAssets, type AssetMap } from "./assets";
-import { sfx, unlockAudio, toggleMute, isMuted, setMuted, stopTrack } from "./audio";
+import { sfx, unlockAudio, toggleMute, isMuted, setMuted, stopTrack, playMenuTheme, fadeOutMenuTheme, fadeInMenuTheme } from "./audio";
 import { MainMenu, type MenuScreen } from "./MainMenu";
 import {
   lastPlayedSlot,
@@ -93,6 +93,17 @@ export function GameCanvas() {
   const [pendingMode, setPendingMode] = useState<PlayMode>("story");
   const [titleCard, setTitleCard] = useState(true);
   const lastPhase = useRef<Overlay>("title");
+
+  useEffect(() => {
+    if (phase !== "title") return;
+    const kick = () => playMenuTheme();
+    window.addEventListener("pointerdown", kick);
+    window.addEventListener("keydown", kick);
+    return () => {
+      window.removeEventListener("pointerdown", kick);
+      window.removeEventListener("keydown", kick);
+    };
+  }, [phase]);
 
   const syncHud = useCallback(() => {
     const s = stateRef.current;
@@ -188,6 +199,7 @@ export function GameCanvas() {
         if (titleCardRef.current) {
           if (e.code === "Enter" || e.code === "Space") {
             e.preventDefault();
+            playMenuTheme();
             titleCardRef.current = false;
             setTitleCard(false);
             sfx.uiConfirm();
@@ -399,6 +411,7 @@ export function GameCanvas() {
   const onStart = (opts?: Partial<StartOpts>) => {
     void unlockAudio();
     stopTrack();
+    fadeOutMenuTheme(500);
     setMenuScreen("menu");
     startGame(stateRef.current, {
       profile: profileRef.current,
@@ -415,6 +428,7 @@ export function GameCanvas() {
   const goMenu = () => {
     void unlockAudio();
     stopTrack();
+    fadeInMenuTheme(400);
     const s = stateRef.current;
     if (s.phase === "playing" || s.phase === "paused" || s.phase === "waveClear") {
       const p = profileRef.current;
@@ -544,6 +558,7 @@ export function GameCanvas() {
               type="button"
               onClick={() => {
                 void unlockAudio();
+                playMenuTheme();
                 titleCardRef.current = false;
                 setTitleCard(false);
                 sfx.uiConfirm();
