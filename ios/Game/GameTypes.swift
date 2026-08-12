@@ -101,7 +101,7 @@ struct TouchState {
     var right = false
     var up = false
     var down = false
-    /// Analog stick axes in -1...1 (0 = neutral). Used by virtual stick; keyboard ignores these.
+    /// Analog stick axes in -1...1 (0 when idle).
     var axisX: CGFloat = 0
     var axisY: CGFloat = 0
 }
