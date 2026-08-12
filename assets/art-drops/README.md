@@ -12,19 +12,16 @@
 | `characters/group/` | Trio | Group portraits |
 | `cutscenes/` | Story stills | Numbered beat plates |
 
-## Unpack binaries
+## Binaries in git (2026-08-12)
 
-From the Grok project download:
+JPG stills live next to this README. The original `05-backups/art-drops-characters-cutscenes-2026-08-12.tar.gz` was not on the Mac; files were sorted from today's `Downloads/imagine-*.jpg` drop.
 
-`05-backups/art-drops-characters-cutscenes-2026-08-12.tar.gz` (~9.3 MB)
+| Path | In git | Notes |
+|---|---|---|
+| `characters/jj/` | 22 / 22 | Complete |
+| `characters/andrew/` | 13 / 13 | Complete |
+| `characters/han/` | 1 / 14 | Only `front-stance.jpg` |
+| `characters/group/` | 2 / 2 | Complete |
+| `cutscenes/` | 0 / 5 | Still only listed in `FILE_LIST.txt` |
 
-```bash
-# in a clone of anemeth1998/jj-night-brawl
-tar -xzf art-drops-characters-cutscenes-2026-08-12.tar.gz
-# creates assets/art-drops/characters/... and assets/art-drops/cutscenes/...
-git add assets/art-drops
-git commit -m "assets: add JJ/Andrew/Han pose sheets + cutscenes"
-git push
-```
-
-Or drag-and-drop the folders in the GitHub web UI.
+To finish Han + cutscenes: unpack the 9.3 MB tar from the Grok project `05-backups/` over this folder, then commit the missing JPGs.
