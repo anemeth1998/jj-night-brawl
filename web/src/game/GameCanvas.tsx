@@ -75,7 +75,6 @@ export function GameCanvas() {
   const stateRef = useRef<GameState>(createGameState());
   const assetsRef = useRef<AssetMap | null>(null);
   const menuLoopRef = useRef<HTMLImageElement[]>([]);
-  const menuVideoRef = useRef<HTMLVideoElement>(null);
   const titleCardRef = useRef(true);
   const rafRef = useRef(0);
   const lastRef = useRef(0);
@@ -502,18 +501,21 @@ export function GameCanvas() {
   const showCombatHud = ready && (phase === "playing" || phase === "waveClear" || phase === "paused");
   const loopChar: CharacterId =
     showMenu && menuScreen === "chars" ? (hoverChar ?? pendingChar) : "jj";
-  const loopSrc = CHAR_LOOP_VIDEO[loopChar];
 
   useEffect(() => {
-    const v = menuVideoRef.current;
-    if (!v) return;
-    if (showMenu) {
-      v.currentTime = 0;
-      void v.play().catch(() => {});
-    } else {
-      v.pause();
-    }
-  }, [showMenu, loopSrc]);
+    const root = wrapRef.current;
+    if (!root) return;
+    const videos = root.querySelectorAll<HTMLVideoElement>("video[data-char-loop]");
+    videos.forEach((v) => {
+      v.muted = true;
+      v.loop = true;
+      if (showMenu) {
+        if (v.paused) void v.play().catch(() => {});
+      } else {
+        v.pause();
+      }
+    });
+  }, [showMenu]);
 
   return (
     <div
@@ -529,18 +531,29 @@ export function GameCanvas() {
               className="absolute inset-0 z-[1] h-full w-full object-contain"
             />
           )}
-          <video
-            ref={menuVideoRef}
-            key={loopSrc}
-            className={`absolute inset-0 z-[1] h-full w-full object-cover ${
-              loopChar === "jj" ? "origin-left scale-125 object-left" : "object-center"
-            } ${showMenu ? "block" : "hidden"}`}
-            src={loopSrc}
-            muted
-            loop
-            playsInline
-            preload="auto"
-          />
+          {(Object.keys(CHAR_LOOP_VIDEO) as CharacterId[]).map((id) => (
+            <video
+              key={id}
+              data-char-loop={id}
+              className={`absolute inset-0 z-[1] h-full w-full object-cover transition-opacity duration-200 ${
+                id === "jj" ? "origin-left scale-125 object-left" : "object-center"
+              } ${showMenu && loopChar === id ? "opacity-100" : "pointer-events-none opacity-0"}`}
+              src={CHAR_LOOP_VIDEO[id]}
+              muted
+              loop
+              autoPlay
+              playsInline
+              preload="auto"
+              onEnded={(e) => {
+                const v = e.currentTarget;
+                v.currentTime = 0;
+                void v.play().catch(() => {});
+              }}
+              onCanPlay={(e) => {
+                if (showMenu) void e.currentTarget.play().catch(() => {});
+              }}
+            />
+          ))}
           <canvas
             ref={canvasRef}
             width={VIEW_W}
@@ -600,7 +613,8 @@ export function GameCanvas() {
               onMove={(dir) => setMenuIndex((i) => (i + dir + 15) % 15)}
               onOpen={(s) => {
                 setMenuScreen(s);
-                if (s !== "chars") setHoverChar(null);
+                if (s === "chars") setHoverChar(pendingChar);
+                else setHoverChar(null);
                 sfx.uiClick();
               }}
               onBack={() => {

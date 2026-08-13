@@ -409,7 +409,7 @@ export function MainMenu({
 
           {screen === "chars" && (
             <Panel title="Character Select">
-              <p className="mb-2 text-xs text-muted">Endless only. Story is JJ's night. Hover Andrew or Han.</p>
+              <p className="mb-2 text-xs text-muted">Endless only. Story is JJ's night. Select a fighter — their loop stays on.</p>
               <div className="flex flex-col gap-2">
                 {(Object.keys(CHARACTERS) as CharacterId[]).map((id) => {
                   const c = CHARACTERS[id];
@@ -427,6 +427,7 @@ export function MainMenu({
                       onPick={() => {
                         onSetChar(id);
                         onSetMode("endless");
+                        onHoverChar?.(id);
                       }}
                       onHover={onHoverChar}
                     />
@@ -631,19 +632,19 @@ function CharCard({
       onClick={onPick}
       onMouseEnter={() => {
         setHot(true);
-        onHover?.(id);
+        if (owned) onPick();
+        else onHover?.(id);
       }}
       onMouseLeave={() => {
         setHot(false);
-        onHover?.(null);
       }}
       onFocus={() => {
         setHot(true);
-        onHover?.(id);
+        if (owned) onPick();
+        else onHover?.(id);
       }}
       onBlur={() => {
         setHot(false);
-        onHover?.(null);
       }}
       className={`flex items-center gap-3 rounded-lg border px-2 py-2 text-left ${
         !owned
@@ -663,9 +664,9 @@ function CharCard({
         <p className="text-[11px] text-muted">
           {role} — {blurb}
         </p>
-        {hot && id === "andrew" && <p className="text-[10px] text-accent">Typing… drinks a soda</p>}
-        {hot && id === "han" && <p className="text-[10px] text-accent">On her phone… a cat walks by</p>}
-        {hot && id === "jj" && <p className="text-[10px] text-accent">Alley smoke loop</p>}
+        {(active || hot) && id === "andrew" && <p className="text-[10px] text-accent">Typing loop</p>}
+        {(active || hot) && id === "han" && <p className="text-[10px] text-accent">Phone & cat loop</p>}
+        {(active || hot) && id === "jj" && <p className="text-[10px] text-accent">Alley smoke loop</p>}
       </div>
     </button>
   );

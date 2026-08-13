@@ -28,7 +28,7 @@ Full 16:9 alley loops. Same locked camera as Menu Select (brick wall, character 
 | `assets/ui/andrew-hover.mp4` | 50 JPG `assets/ui/andrew-frames/f001–f050.jpg` | Types on laptop, drinks a soda, back to typing |
 | `assets/ui/han-hover.mp4` | 50 JPG `assets/ui/han-frames/f001–f050.jpg` | Types on phone, pets a cat that walks by |
 
-Character Select swaps the full-screen background to Andrew or Han when you hover / select them.
+Character Select keeps all three loops playing in the background. Selecting JJ, Andrew, or Han reveals that fighter's loop and leaves it running (same as JJ's alley loop) until you pick someone else.
 
 
 
