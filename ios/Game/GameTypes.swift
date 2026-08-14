@@ -101,6 +101,9 @@ struct TouchState {
     var right = false
     var up = false
     var down = false
+    /// Analog stick axes in -1...1 (0 = neutral). Used by virtual stick; keyboard ignores these.
+    var axisX: CGFloat = 0
+    var axisY: CGFloat = 0
 }
 
 final class GameState {
@@ -129,6 +132,8 @@ final class GameState {
     var touch = TouchState()
     var actionQueue: [AttackKind] = []
     var jumpQueued = false
+    /// Remaining time (seconds) for early-press jump buffer; see `ControlTuning.jumpBuffer`.
+    var jumpBufferTimer: CGFloat = 0
     var elapsed: CGFloat = 0
     var stageWidth: CGFloat = 2800
     var riffPulse: CGFloat = 0
