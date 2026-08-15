@@ -2,7 +2,24 @@
 
 Living status board. Update statuses as work lands; keep the snapshot honest.
 
-**Last updated:** 2026-08-11
+**Last updated:** 2026-08-15
+
+## P0 — current milestone
+
+**One wave that feels good:** playable feel + stable 60fps + readable JJ.
+
+Live project: `Desktop/Projects/JJNightBrawl` (GitHub `anemeth1998/jj-night-brawl`). Not Ikemen-GO-JJ-side.
+
+| Surface | Owner | Job |
+|---------|-------|-----|
+| Gameplay loop + waves | Victor / Jimmy | One wave that plays |
+| Stability / perf | Eric | Hold 60fps |
+| Controls | Bradford | Stick, safe area, one-handed, haptics |
+| Readability + SFX juice | Kenny / Brian | JJ silhouette on the dark street; hit juice |
+
+CoS wakes one or two of those for a single surface. Socrates only after a build exists. JJ stays producer (this board) — no engine code.
+
+**Parked until Andrew says go:** monetization, ASO, LiveOps, widgets, visionOS, TestFlight.
 
 ## Legend
 
@@ -28,11 +45,11 @@ Living status board. Update statuses as work lands; keep the snapshot honest.
 
 ## Next priorities
 
-1. Playable core: **move + punch/kick**
-2. Land binary assets in **git / LFS**
-3. Lock **v0 level list**
-4. Fill **combat numbers**
-5. **Sound pass** plan
+1. **P0 — One wave that feels good:** playable feel + stable 60fps + readable JJ (see [P0 — current milestone](#p0--current-milestone))
+2. Land binary assets in **git / LFS** *(after P0)*
+3. Lock **v0 level list** *(after P0)*
+4. Fill **combat numbers** *(after P0)*
+5. **Sound pass** plan *(after P0)*
 
 ## Blockers
 
@@ -43,11 +60,11 @@ Living status board. Update statuses as work lands; keep the snapshot honest.
 
 | Level | Intent (v0 placeholder) | Status |
 |-------|-------------------------|--------|
-| L1 — Alley Opener | Tutorial wave, biz trash mobs | 🔴 |
-| L2 — Sidewalk Surge | Mix biz + MAGA pressure | 🔴 |
-| L3 — Club Approach | Introduce goth; denser packs | 🔴 |
-| L4 — Wave Break / Smoke | Cigarette break beat; heal vibe | 🔴 |
-| L5 — Gun Unlock | Post–wave 3 gun; climax street | 🔴 |
+| L1 — Alley Opener | Tutorial wave, biz trash mobs — **P0 target wave** | 🔴 |
+| L2 — Sidewalk Surge | Mix biz + MAGA pressure — parked until after P0 | 🔴 |
+| L3 — Club Approach | Introduce goth; denser packs — parked until after P0 | 🔴 |
+| L4 — Wave Break / Smoke | Cigarette break beat; heal vibe — parked until after P0 | 🔴 |
+| L5 — Gun Unlock | Post–wave 3 gun; climax street — parked until after P0 | 🔴 |
 
 ## Enemy status
 
