@@ -24,8 +24,14 @@ const required = [
   "assets/sprites/fx/sheet-transparent.png",
   "assets/sprites/andrew/idle/sheet-transparent.png",
   "assets/sprites/andrew/walk/sheet-transparent.png",
+  "assets/sprites/andrew/attack/sheet-transparent.png",
+  "assets/sprites/andrew/kick/sheet-transparent.png",
+  "assets/sprites/andrew/hurt/sheet-transparent.png",
   "assets/sprites/han/idle/sheet-transparent.png",
   "assets/sprites/han/walk/sheet-transparent.png",
+  "assets/sprites/han/attack/sheet-transparent.png",
+  "assets/sprites/han/kick/sheet-transparent.png",
+  "assets/sprites/han/hurt/sheet-transparent.png",
 ];
 
 for (const type of ["biz", "maga", "gothm", "gothf"]) {

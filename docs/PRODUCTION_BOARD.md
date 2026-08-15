@@ -37,7 +37,7 @@ Living status board. Update statuses as work lands; keep the snapshot honest.
 ## Blockers
 
 - Full Swift/Xcode engine still missing (`ContentView`, `GameEngine.swift`)
-- Andrew/Han only have idle + walk in-engine sheets
+- Andrew/Han jump + special sheets still missing (punch/kick/hurt landed)
 
 ## Levels status
 

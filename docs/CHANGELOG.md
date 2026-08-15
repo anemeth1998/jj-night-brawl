@@ -7,6 +7,7 @@ All notable project-level notes for this repo. Gameplay versioning can split lat
 ### Added
 
 - Playable web app: Vite + React shell in `web/` (`npm run dev`)
+- Andrew / Han punch, kick, and hurt combat stills wired in-engine
 - Restored JJ / enemy / FX runtime sheets from the 2026-08-12 playable backup
 - Asset loader fallbacks so a missing PNG no longer blocks boot
 - `docs/` living production documentation set:

@@ -57,6 +57,12 @@ const GALLERY: { label: string; sub: string; key: keyof AssetMap; unlock: string
   { label: "JJ", sub: "Jump", key: "jjJump", unlock: "jjJump" },
   { label: "JJ", sub: "Riff", key: "jjSpecial", unlock: "jjSpecial" },
   { label: "JJ", sub: "Smoke", key: "jjSmoke", unlock: "jjSmoke" },
+  { label: "Andrew", sub: "Punch", key: "andrewAttack", unlock: "andrewAttack" },
+  { label: "Andrew", sub: "Kick", key: "andrewKick", unlock: "andrewKick" },
+  { label: "Andrew", sub: "Hurt", key: "andrewHurt", unlock: "andrewHurt" },
+  { label: "Han", sub: "Punch", key: "hanAttack", unlock: "hanAttack" },
+  { label: "Han", sub: "Kick", key: "hanKick", unlock: "hanKick" },
+  { label: "Han", sub: "Hurt", key: "hanHurt", unlock: "hanHurt" },
   { label: "Suit", sub: "White collar", key: "bizIdle", unlock: "biz" },
   { label: "Co-opter", sub: "MAGA", key: "magaIdle", unlock: "maga" },
   { label: "Goth", sub: "Man", key: "gothmIdle", unlock: "gothm" },
@@ -270,7 +276,11 @@ export function MainMenu({
             <Panel title="Gallery">
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {GALLERY.map((g) => {
-                  const open = profile.unlocks.gallery.includes(g.unlock) || g.unlock.startsWith("jj");
+                  const open =
+                    profile.unlocks.gallery.includes(g.unlock) ||
+                    g.unlock.startsWith("jj") ||
+                    (g.unlock.startsWith("andrew") && profile.shop.ownedChars.includes("andrew")) ||
+                    (g.unlock.startsWith("han") && profile.shop.ownedChars.includes("han"));
                   return (
                     <figure key={g.key} className="flex flex-col items-center rounded-lg border border-border bg-bg/80 p-2">
                       {assets && open ? (

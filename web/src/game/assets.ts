@@ -26,8 +26,14 @@ export type SheetKey =
   | "titleArt"
   | "andrewIdle"
   | "andrewWalk"
+  | "andrewAttack"
+  | "andrewKick"
+  | "andrewHurt"
   | "hanIdle"
-  | "hanWalk";
+  | "hanWalk"
+  | "hanAttack"
+  | "hanKick"
+  | "hanHurt";
 
 interface SheetDef {
   src: string;
@@ -38,7 +44,7 @@ interface SheetDef {
   tint?: string;
 }
 
-const V = "v=17";
+const V = "v=18";
 
 const MENU_LOOP_COUNT = 50;
 export const MENU_LOOP_SRCS = Array.from(
@@ -167,8 +173,14 @@ const SHEETS: Record<SheetKey, SheetDef> = {
   titleArt: { src: `/assets/ui/title-screen.png?${V}`, cols: 1, rows: 1 },
   andrewIdle: { src: `/assets/sprites/andrew/idle/sheet-transparent.png?${V}`, cols: 1, rows: 1 },
   andrewWalk: { src: `/assets/sprites/andrew/walk/sheet-transparent.png?${V}`, cols: 2, rows: 2 },
+  andrewAttack: { src: `/assets/sprites/andrew/attack/sheet-transparent.png?${V}`, cols: 1, rows: 1 },
+  andrewKick: { src: `/assets/sprites/andrew/kick/sheet-transparent.png?${V}`, cols: 1, rows: 1 },
+  andrewHurt: { src: `/assets/sprites/andrew/hurt/sheet-transparent.png?${V}`, cols: 1, rows: 1 },
   hanIdle: { src: `/assets/sprites/han/idle/sheet-transparent.png?${V}`, cols: 1, rows: 1 },
   hanWalk: { src: `/assets/sprites/han/walk/sheet-transparent.png?${V}`, cols: 2, rows: 2 },
+  hanAttack: { src: `/assets/sprites/han/attack/sheet-transparent.png?${V}`, cols: 1, rows: 1 },
+  hanKick: { src: `/assets/sprites/han/kick/sheet-transparent.png?${V}`, cols: 1, rows: 1 },
+  hanHurt: { src: `/assets/sprites/han/hurt/sheet-transparent.png?${V}`, cols: 1, rows: 1 },
 };
 
 export interface LoadedSheet {
