@@ -55,8 +55,9 @@ function repoAssets(): Plugin {
     },
     closeBundle() {
       const dest = path.resolve(rootDir, "dist/assets");
-      fs.rmSync(dest, { recursive: true, force: true });
       fs.cpSync(assetsRoot, dest, { recursive: true });
+      // Never let a stale generic tank-guy sheet survive a previous build.
+      fs.rmSync(path.join(dest, "sprites/enemy"), { recursive: true, force: true });
     },
   };
 }
