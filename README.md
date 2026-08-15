@@ -1,22 +1,31 @@
 # JJ: Night Brawl
 
-Private backup of **JJ: Night Brawl** — a 32-bit side-scrolling beat-em-up.
+Private repo for **JJ: Night Brawl** — a 32-bit side-scrolling beat-em-up.
+
+## Play (web)
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+Then open http://localhost:5173. Title card → menu → Story / Endless. See [`web/README.md`](web/README.md).
 
 ## Repo contents
 
-This commit backs up the **art/assets** recovered from the project workspace:
-
+- `web/` — Vite + React canvas build (`src/game/` is the live engine)
 - `assets/map/` — parallax backgrounds (sky, far, mid)
-- `assets/sprites/jj/` — protagonist sheets (idle, walk, attack, hurt)
-- `assets/sprites/enemy/` — enemy sheets (idle, walk, attack)
+- `assets/Background/` — five night stages
+- `assets/sprites/jj/` — protagonist sheets (idle, walk, attack, kick, hurt, jump, special, smoke)
+- `assets/sprites/enemies/` — biz / MAGA / goth sheets
+- `assets/sprites/andrew/` + `assets/sprites/han/` — roster idle/walk
 - `assets/sprites/fx/` — impact FX
 - `assets/audio/tdm-8bit.mp3` — title / menu 8-bit theme (loops title → menu)
+- `ios/` — partial Swift stubs (full engine not restored)
 
-Game-ready sheets are named `sheet-transparent.png` (magenta keyed).
+Game-ready sheets are named `sheet-transparent.png` (magenta keyed) or `*-sheet.png` for per-archetype enemies.
 `pipeline-meta.json` files record sheet grid / frame info.
-
-> **Note:** The full Xcode/Swift source and complete web engine lived in an earlier build session.
-> This repo starts with assets + documentation so nothing is lost while source is re-assembled or re-exported.
 
 ## Game design (summary)
 

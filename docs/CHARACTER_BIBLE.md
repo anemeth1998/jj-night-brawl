@@ -40,10 +40,10 @@ Numbers are placeholders until combat fill-in. Align sheets with `pipeline-meta.
 
 | ID | Name | Fantasy | Art | Moveset stub |
 |----|------|---------|-----|--------------|
-| `biz` | Businessman | White-collar jabber | Shared `enemy/` sheets (external binaries) | Approach → jab → fold |
-| `maga` | MAGA | Tank / charge | Shared sheets | Approach → wind-up → shove |
-| `gothm` | Goth (M) | Flanker | Shared sheets | Circle → swipe |
-| `gothf` | Goth (F) | Flanker | Shared sheets | Circle → swipe |
+| `biz` | Businessman | White-collar jabber | `sprites/enemies/biz/*-sheet.png` | Approach → jab → fold |
+| `maga` | MAGA | Conservative bruiser | `sprites/enemies/maga/*-sheet.png` | Approach → wind-up → shove |
+| `gothm` | Goth (M) | Flanker | `sprites/enemies/gothm/*-sheet.png` | Circle → swipe |
+| `gothf` | Goth (F) | Flanker | `sprites/enemies/gothf/*-sheet.png` | Circle → swipe |
 
 HP / damage / score values: **TBD** (fill with combat numbers pass).
 

@@ -1,8 +1,8 @@
 {
   "mode": "walk",
   "rows": 2,
-  "cols": 2,
+  "cols": 4,
   "cell_size": 128,
-  "frame_labels": ["walk-1", "walk-2", "walk-3", "walk-4"],
+  "frame_labels": ["walk-1", "walk-2", "walk-3", "walk-4", "walk-5", "walk-6", "walk-7", "walk-8"],
   "source": "sprites/jj/walk/pipeline-meta.json"
 }

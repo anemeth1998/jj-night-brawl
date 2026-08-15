@@ -17,7 +17,7 @@
 | Platform | Status |
 |----------|--------|
 | iOS (Swift / SpriteKit-ish stubs) | Partial source under `ios/` |
-| Web | Missing; controls designed for keyboard + touch mirrors |
+| Web | Playable — `cd web && npm run dev` |
 
 ## Core loop
 
