@@ -55,6 +55,7 @@ function repoAssets(): Plugin {
     },
     closeBundle() {
       const dest = path.resolve(rootDir, "dist/assets");
+      fs.rmSync(dest, { recursive: true, force: true });
       fs.cpSync(assetsRoot, dest, { recursive: true });
     },
   };

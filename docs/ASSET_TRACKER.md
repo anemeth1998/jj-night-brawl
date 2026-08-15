@@ -22,7 +22,9 @@ assets/
   map/              downtown trio alias for current iOS loader
   sprites/
     jj/             idle|walk|attack|hurt (+ reference)
-    enemy/          idle|walk|attack
+    andrew/         idle|walk|attack|kick|hurt
+    han/            idle|walk|attack|kick|hurt
+    enemies/        biz|maga|gothm|gothf
     fx/             impact sheet
 ```
 
@@ -51,7 +53,7 @@ assets/
 
 | Asset | Path | Meta | In git | Status |
 |-------|------|------|--------|--------|
-| Idle / walk / attack | Shared `sprites/enemy/` generic (not a roster character) | yes | meta only | ⚪ |
+| Generic tank-guy | `sprites/enemy/` | — | removed | 🚫 |
 | Business conservative | `sprites/enemies/biz/*-sheet.png` | — | Yes | 🟢 |
 | MAGA | `sprites/enemies/maga/*-sheet.png` | — | Yes | 🟢 |
 | Goth M / Goth F | `sprites/enemies/gothm` + `gothf` | — | Yes | 🟢 |

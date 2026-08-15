@@ -500,7 +500,9 @@ export function GameCanvas() {
   const showMenu = ready && phase === "title" && !titleCard;
   const showCombatHud = ready && (phase === "playing" || phase === "waveClear" || phase === "paused");
   const loopChar: CharacterId =
-    showMenu && menuScreen === "chars" ? (hoverChar ?? pendingChar) : "jj";
+    showMenu && (menuScreen === "chars" || menuScreen === "endless")
+      ? (hoverChar ?? pendingChar)
+      : "jj";
 
   useEffect(() => {
     const root = wrapRef.current;

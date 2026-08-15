@@ -44,7 +44,7 @@ interface SheetDef {
   tint?: string;
 }
 
-const V = "v=21";
+const V = "v=22";
 
 const MENU_LOOP_COUNT = 50;
 export const MENU_LOOP_SRCS = Array.from(
@@ -101,14 +101,20 @@ const SHEETS: Record<SheetKey, SheetDef> = {
   titleArt: { src: `/assets/ui/title-screen.png?${V}`, cols: 1, rows: 1 },
   andrewIdle: { src: `/assets/sprites/andrew/idle/sheet-transparent.png?${V}`, cols: 1, rows: 1 },
   andrewWalk: { src: `/assets/sprites/andrew/walk/sheet-transparent.png?${V}`, cols: 4, rows: 2 },
-  andrewAttack: { src: `/assets/sprites/andrew/attack/sheet-transparent.png?${V}`, cols: 1, rows: 1 },
-  andrewKick: { src: `/assets/sprites/andrew/kick/sheet-transparent.png?${V}`, cols: 1, rows: 1 },
+  andrewAttack: { src: `/assets/sprites/andrew/attack/sheet-transparent.png?${V}`, cols: 2, rows: 2 },
+  andrewKick: { src: `/assets/sprites/andrew/kick/sheet-transparent.png?${V}`, cols: 2, rows: 2 },
   andrewHurt: { src: `/assets/sprites/andrew/hurt/sheet-transparent.png?${V}`, cols: 1, rows: 1 },
   hanIdle: { src: `/assets/sprites/han/idle/sheet-transparent.png?${V}`, cols: 1, rows: 1 },
   hanWalk: { src: `/assets/sprites/han/walk/sheet-transparent.png?${V}`, cols: 4, rows: 2 },
-  hanAttack: { src: `/assets/sprites/han/attack/sheet-transparent.png?${V}`, cols: 1, rows: 1 },
-  hanKick: { src: `/assets/sprites/han/kick/sheet-transparent.png?${V}`, cols: 1, rows: 1 },
+  hanAttack: { src: `/assets/sprites/han/attack/sheet-transparent.png?${V}`, cols: 2, rows: 2 },
+  hanKick: { src: `/assets/sprites/han/kick/sheet-transparent.png?${V}`, cols: 2, rows: 2 },
   hanHurt: { src: `/assets/sprites/han/hurt/sheet-transparent.png?${V}`, cols: 1, rows: 1 },
+};
+
+export const CHAR_THUMBS: Record<"jj" | "andrew" | "han", string> = {
+  jj: `/assets/ui/thumbs/jj.jpg?${V}`,
+  andrew: `/assets/ui/thumbs/andrew.jpg?${V}`,
+  han: `/assets/ui/thumbs/han.jpg?${V}`,
 };
 
 export interface LoadedSheet {
@@ -254,7 +260,9 @@ function keyChromaBoxes(img: HTMLImageElement, cols: number, rows: number): Prom
 }
 
 async function loadSheetImage(def: SheetDef, key: SheetKey): Promise<HTMLImageElement> {
-  const candidates = [def.src, ...(def.fallbacks ?? [])];
+  const candidates = [def.src, ...(def.fallbacks ?? [])].filter(
+    (src) => !src.includes("/sprites/enemy/"),
+  );
   for (const src of candidates) {
     try {
       const img = await loadImage(src);
