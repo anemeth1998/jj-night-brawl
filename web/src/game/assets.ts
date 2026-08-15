@@ -33,6 +33,9 @@ interface SheetDef {
   src: string;
   cols: number;
   rows: number;
+  /** Extra paths to try if the primary file is missing. */
+  fallbacks?: string[];
+  tint?: string;
 }
 
 const V = "v=17";
@@ -69,21 +72,93 @@ const SHEETS: Record<SheetKey, SheetDef> = {
   jjSpecial: { src: `/assets/sprites/jj/special/sheet-transparent.png?${V}`, cols: 2, rows: 2 },
   jjSmoke: { src: `/assets/sprites/jj/smoke/sheet-transparent.png?${V}`, cols: 2, rows: 2 },
 
-  bizIdle: { src: `/assets/sprites/enemies/biz/idle-sheet.png?${V}`, cols: 2, rows: 2 },
-  bizWalk: { src: `/assets/sprites/enemies/biz/walk-sheet.png?${V}`, cols: 2, rows: 2 },
-  bizAttack: { src: `/assets/sprites/enemies/biz/attack-sheet.png?${V}`, cols: 2, rows: 2 },
+  bizIdle: {
+    src: `/assets/sprites/enemies/biz/idle-sheet.png?${V}`,
+    cols: 2,
+    rows: 2,
+    fallbacks: [`/assets/sprites/enemy/idle/sheet-transparent.png?${V}`],
+    tint: "#c8b48a",
+  },
+  bizWalk: {
+    src: `/assets/sprites/enemies/biz/walk-sheet.png?${V}`,
+    cols: 2,
+    rows: 2,
+    fallbacks: [`/assets/sprites/enemy/walk/sheet-transparent.png?${V}`],
+    tint: "#c8b48a",
+  },
+  bizAttack: {
+    src: `/assets/sprites/enemies/biz/attack-sheet.png?${V}`,
+    cols: 2,
+    rows: 2,
+    fallbacks: [`/assets/sprites/enemy/attack/sheet-transparent.png?${V}`],
+    tint: "#c8b48a",
+  },
 
-  magaIdle: { src: `/assets/sprites/enemies/maga/idle-sheet.png?${V}`, cols: 2, rows: 2 },
-  magaWalk: { src: `/assets/sprites/enemies/maga/walk-sheet.png?${V}`, cols: 2, rows: 2 },
-  magaAttack: { src: `/assets/sprites/enemies/maga/attack-sheet.png?${V}`, cols: 2, rows: 2 },
+  magaIdle: {
+    src: `/assets/sprites/enemies/maga/idle-sheet.png?${V}`,
+    cols: 2,
+    rows: 2,
+    fallbacks: [`/assets/sprites/enemy/idle/sheet-transparent.png?${V}`],
+    tint: "#d4543a",
+  },
+  magaWalk: {
+    src: `/assets/sprites/enemies/maga/walk-sheet.png?${V}`,
+    cols: 2,
+    rows: 2,
+    fallbacks: [`/assets/sprites/enemy/walk/sheet-transparent.png?${V}`],
+    tint: "#d4543a",
+  },
+  magaAttack: {
+    src: `/assets/sprites/enemies/maga/attack-sheet.png?${V}`,
+    cols: 2,
+    rows: 2,
+    fallbacks: [`/assets/sprites/enemy/attack/sheet-transparent.png?${V}`],
+    tint: "#d4543a",
+  },
 
-  gothmIdle: { src: `/assets/sprites/enemies/gothm/idle-sheet.png?${V}`, cols: 2, rows: 2 },
-  gothmWalk: { src: `/assets/sprites/enemies/gothm/walk-sheet.png?${V}`, cols: 2, rows: 2 },
-  gothmAttack: { src: `/assets/sprites/enemies/gothm/attack-sheet.png?${V}`, cols: 2, rows: 2 },
+  gothmIdle: {
+    src: `/assets/sprites/enemies/gothm/idle-sheet.png?${V}`,
+    cols: 2,
+    rows: 2,
+    fallbacks: [`/assets/sprites/enemy/idle/sheet-transparent.png?${V}`],
+    tint: "#6a5a88",
+  },
+  gothmWalk: {
+    src: `/assets/sprites/enemies/gothm/walk-sheet.png?${V}`,
+    cols: 2,
+    rows: 2,
+    fallbacks: [`/assets/sprites/enemy/walk/sheet-transparent.png?${V}`],
+    tint: "#6a5a88",
+  },
+  gothmAttack: {
+    src: `/assets/sprites/enemies/gothm/attack-sheet.png?${V}`,
+    cols: 2,
+    rows: 2,
+    fallbacks: [`/assets/sprites/enemy/attack/sheet-transparent.png?${V}`],
+    tint: "#6a5a88",
+  },
 
-  gothfIdle: { src: `/assets/sprites/enemies/gothf/idle-sheet.png?${V}`, cols: 2, rows: 2 },
-  gothfWalk: { src: `/assets/sprites/enemies/gothf/walk-sheet.png?${V}`, cols: 2, rows: 2 },
-  gothfAttack: { src: `/assets/sprites/enemies/gothf/attack-sheet.png?${V}`, cols: 2, rows: 2 },
+  gothfIdle: {
+    src: `/assets/sprites/enemies/gothf/idle-sheet.png?${V}`,
+    cols: 2,
+    rows: 2,
+    fallbacks: [`/assets/sprites/enemy/idle/sheet-transparent.png?${V}`],
+    tint: "#8a4a72",
+  },
+  gothfWalk: {
+    src: `/assets/sprites/enemies/gothf/walk-sheet.png?${V}`,
+    cols: 2,
+    rows: 2,
+    fallbacks: [`/assets/sprites/enemy/walk/sheet-transparent.png?${V}`],
+    tint: "#8a4a72",
+  },
+  gothfAttack: {
+    src: `/assets/sprites/enemies/gothf/attack-sheet.png?${V}`,
+    cols: 2,
+    rows: 2,
+    fallbacks: [`/assets/sprites/enemy/attack/sheet-transparent.png?${V}`],
+    tint: "#8a4a72",
+  },
 
   fxImpact: { src: `/assets/sprites/fx/sheet-transparent.png?${V}`, cols: 2, rows: 2 },
   sky: { src: `/assets/map/sky.png?${V}`, cols: 1, rows: 1 },
@@ -117,19 +192,61 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+function placeholderSheet(def: SheetDef, label: string): Promise<HTMLImageElement> {
+  const cell = 128;
+  const canvas = document.createElement("canvas");
+  canvas.width = cell * def.cols;
+  canvas.height = cell * def.rows;
+  const ctx = canvas.getContext("2d");
+  if (ctx) {
+    const tint = def.tint ?? "#ff2d8a";
+    for (let row = 0; row < def.rows; row++) {
+      for (let col = 0; col < def.cols; col++) {
+        const x = col * cell;
+        const y = row * cell;
+        ctx.fillStyle = row + col === 0 ? "#140e1c" : "#1c1528";
+        ctx.fillRect(x, y, cell, cell);
+        ctx.fillStyle = tint;
+        ctx.fillRect(x + 44, y + 28, 40, 72);
+        ctx.fillStyle = "#f6eef8";
+        ctx.fillRect(x + 54, y + 16, 20, 18);
+        ctx.strokeStyle = "rgba(255,255,255,0.18)";
+        ctx.strokeRect(x + 2, y + 2, cell - 4, cell - 4);
+      }
+    }
+    ctx.fillStyle = "#f6eef8";
+    ctx.font = "bold 14px sans-serif";
+    ctx.fillText(label.slice(0, 10), 8, 18);
+  }
+  return loadImage(canvas.toDataURL("image/png"));
+}
+
+async function loadSheetImage(def: SheetDef, key: SheetKey): Promise<HTMLImageElement> {
+  const candidates = [def.src, ...(def.fallbacks ?? [])];
+  for (const src of candidates) {
+    try {
+      return await loadImage(src);
+    } catch {
+      /* try next path or placeholder */
+    }
+  }
+  console.warn(`[JJ] missing sheet ${key}, using placeholder`);
+  return placeholderSheet(def, key);
+}
+
 export async function loadAssets(): Promise<AssetMap> {
   const entries = await Promise.all(
     (Object.keys(SHEETS) as SheetKey[]).map(async (key) => {
       const def = SHEETS[key];
-      const img = await loadImage(def.src);
+      const img = await loadSheetImage(def, key);
       return [
         key,
         {
           img,
           cols: def.cols,
           rows: def.rows,
-          frameW: Math.floor(img.naturalWidth / def.cols),
-          frameH: Math.floor(img.naturalHeight / def.rows),
+          frameW: Math.max(1, Math.floor((img.naturalWidth || 128 * def.cols) / def.cols)),
+          frameH: Math.max(1, Math.floor((img.naturalHeight || 128 * def.rows) / def.rows)),
           frameCount: def.cols * def.rows,
         } satisfies LoadedSheet,
       ] as const;
@@ -139,7 +256,15 @@ export async function loadAssets(): Promise<AssetMap> {
 }
 
 export async function loadMenuLoop(): Promise<HTMLImageElement[]> {
-  return Promise.all(MENU_LOOP_SRCS.map((src) => loadImage(src)));
+  const frames: HTMLImageElement[] = [];
+  for (const src of MENU_LOOP_SRCS) {
+    try {
+      frames.push(await loadImage(src));
+    } catch {
+      break;
+    }
+  }
+  return frames;
 }
 
 export async function loadCharLoop(id: "andrew" | "han"): Promise<HTMLImageElement[]> {

@@ -40,44 +40,44 @@ assets/
 
 | Asset | Path | Meta | In git | Status |
 |-------|------|------|--------|--------|
-| Idle sheet | `sprites/jj/idle/sheet-transparent.png` | yes | No | 🟡 |
-| Walk sheet | `sprites/jj/walk/sheet-transparent.png` | yes | No | 🟡 |
-| Attack sheet | `sprites/jj/attack/sheet-transparent.png` | yes | No | 🟡 |
-| Hurt sheet | `sprites/jj/hurt/sheet-transparent.png` | yes | No | 🟡 |
+| Idle sheet | `sprites/jj/idle/sheet-transparent.png` | yes | Yes | 🟢 |
+| Walk sheet | `sprites/jj/walk/sheet-transparent.png` | yes | Yes | 🟢 |
+| Attack sheet | `sprites/jj/attack/sheet-transparent.png` | yes | Yes | 🟢 |
+| Hurt sheet | `sprites/jj/hurt/sheet-transparent.png` | yes | Yes | 🟢 |
+| Kick / jump / special / smoke | `sprites/jj/{kick,jump,special,smoke}/` | — | Yes | 🟢 |
 | Reference | `sprites/jj/reference.jpg` | — | No | 🟡 |
-| Jump / smoke / victory | TBD | — | — | 🔴 |
 
 ## Enemy tracker
 
 | Asset | Path | Meta | In git | Status |
 |-------|------|------|--------|--------|
-| Idle sheet | `sprites/enemy/idle/sheet-transparent.png` | yes | No | 🟡 |
-| Walk sheet | `sprites/enemy/walk/sheet-transparent.png` | yes | No | 🟡 |
-| Attack sheet | `sprites/enemy/attack/sheet-transparent.png` | yes | No | 🟡 |
-| Per-archetype unique sheets | TBD | — | — | 🔴 |
+| Idle sheet | `sprites/enemy/idle/sheet-transparent.png` | yes | Yes | 🟢 |
+| Walk sheet | `sprites/enemy/walk/sheet-transparent.png` | yes | Yes | 🟢 |
+| Attack sheet | `sprites/enemy/attack/sheet-transparent.png` | yes | Yes | 🟢 |
+| Per-archetype unique sheets | `sprites/enemies/{biz,maga,gothm,gothf}/*-sheet.png` | — | Yes | 🟢 |
 
 ## FX tracker
 
 | Asset | Path | Meta | In git | Status |
 |-------|------|------|--------|--------|
-| Impact / hit FX | `sprites/fx/sheet-transparent.png` | yes | No | 🟡 |
+| Impact / hit FX | `sprites/fx/sheet-transparent.png` | yes | Yes | 🟢 |
 | Muzzle / spark / smoke particles | code-driven / TBD art | — | — | 🔴 |
 
 ## UI tracker
 
 | Asset | Notes | Status |
 |-------|-------|--------|
-| HUD (HP, meter, wave) | Not started | 🔴 |
-| Touch controls | Not started | 🔴 |
-| Title / pause / game over | Not started | 🔴 |
-| Slogan speech bubble chrome | Not started | 🔴 |
+| HUD (HP, meter, wave) | Canvas HUD in `web/src/game/engine.ts` | 🟢 |
+| Touch controls | Virtual pad in `GameCanvas.tsx` | 🟢 |
+| Title / pause / game over | Title card + banners | 🟢 |
+| Slogan speech bubble chrome | Engine speech bubbles | 🟢 |
 
 ## Sound tracker
 
 | Asset | Notes | Status |
 |-------|-------|--------|
-| Punch / kick / hurt SFX | Not started — plan after core combat | 🔴 |
-| Riff sting | Not started | 🔴 |
-| Gun shot | Not started | 🔴 |
-| Wave clear / smoke ambience | Not started | 🔴 |
-| Music bed | Not started | 🔴 |
+| Punch / kick / hurt SFX | Procedural Web Audio in `web/src/game/audio.ts` | 🟢 |
+| Riff sting | Procedural | 🟢 |
+| Gun shot | Procedural | 🟢 |
+| Wave clear / smoke ambience | Procedural | 🟡 |
+| Music bed | Title/menu `tdm-8bit.mp3`; no brawl bed yet | 🟡 |

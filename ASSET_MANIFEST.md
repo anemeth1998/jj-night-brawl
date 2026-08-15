@@ -50,14 +50,15 @@ Matched pose sheet (Andrew + Han): front-idle, kneel, crouch, sit-cross-legged, 
 
 ## Sprites (fighter sheets)
 
-Binary PNGs/GIFs for in-engine fighters may still live in `jj-night-brawl-assets-backup.tar.gz` until restored.
+Runtime fighter sheets are in git (restored 2026-08-15 from `backup/web-playable-20260812`).
 
 ### JJ sprites
-- sprites/jj/idle|walk|attack|hurt/sheet-transparent.png (+ frames, meta)
-- sprites/jj/reference.jpg
+- sprites/jj/idle|walk|attack|kick|hurt|jump|special|smoke/sheet-transparent.png
+- sprites/jj/reference.jpg (still external)
 
 ### Enemies
-- sprites/enemy/idle|walk|attack/sheet-transparent.png
+- sprites/enemy/idle|walk|attack/sheet-transparent.png (generic)
+- sprites/enemies/{biz,maga,gothm,gothf}/{idle,walk,attack}-sheet.png
 
 ### FX
 - sprites/fx/sheet-transparent.png
