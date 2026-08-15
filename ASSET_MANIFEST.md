@@ -25,6 +25,7 @@ Full 16:9 alley loops. Same locked camera as Menu Select (brick wall, character 
 | Path | Frames | Motion |
 |---|---|---|
 | `assets/ui/menu-select-loop.mp4` | video (+ 50 PNG frames in project) | JJ smokes / idle |
+| `assets/ui/jj-frames/f001.jpg` | 1280×720 still from the alley loop | Endless character-select thumbnail |
 | `assets/ui/andrew-hover.mp4` | 50 JPG `assets/ui/andrew-frames/f001–f050.jpg` | Types on laptop, drinks a soda, back to typing |
 | `assets/ui/han-hover.mp4` | 50 JPG `assets/ui/han-frames/f001–f050.jpg` | Types on phone, pets a cat that walks by |
 

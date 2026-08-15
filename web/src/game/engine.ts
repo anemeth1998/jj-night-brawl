@@ -957,7 +957,7 @@ function updatePlayer(state: GameState, dt: number) {
   p.y += p.vy * dt;
   updatePhysics(p, dt);
   clampFighter(p, state.stageWidth);
-  const walkFrames = state.characterId === "jj" ? 8 : 4;
+  const walkFrames = 8;
   updateFighterAnim(p, dt, moving && canAct(p) && grounded(p), walkFrames, PLAYER_WALK_FPS);
 }
 

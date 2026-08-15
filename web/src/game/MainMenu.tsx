@@ -634,7 +634,7 @@ function CharCard({
       ? "/assets/ui/andrew-frames/f001.jpg"
       : id === "han"
         ? "/assets/ui/han-frames/f001.jpg"
-        : "/assets/sprites/jj/idle/sheet-transparent.png";
+        : "/assets/ui/jj-frames/f001.jpg";
   return (
     <button
       type="button"
