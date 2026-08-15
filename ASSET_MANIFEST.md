@@ -54,11 +54,14 @@ Runtime fighter sheets are in git (restored 2026-08-15 from `backup/web-playable
 
 ### JJ sprites
 - sprites/jj/idle|walk|attack|kick|hurt|jump|special|smoke/sheet-transparent.png
+- sprites/jj/walk/walk-1.png … walk-8.png (8-frame cycle)
 - sprites/jj/reference.jpg (still external)
 
-### Enemies
-- sprites/enemy/idle|walk|attack/sheet-transparent.png (generic)
-- sprites/enemies/{biz,maga,gothm,gothf}/{idle,walk,attack}-sheet.png
+### Enemies (MAGA / business conservative / goth only)
+- sprites/enemies/biz/{idle,walk,attack}-sheet.png
+- sprites/enemies/maga/{idle,walk,attack}-sheet.png
+- sprites/enemies/gothm/{idle,walk,attack}-sheet.png
+- sprites/enemies/gothf/{idle,walk,attack}-sheet.png
 
 ### FX
 - sprites/fx/sheet-transparent.png

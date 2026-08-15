@@ -41,7 +41,7 @@ assets/
 | Asset | Path | Meta | In git | Status |
 |-------|------|------|--------|--------|
 | Idle sheet | `sprites/jj/idle/sheet-transparent.png` | yes | Yes | 🟢 |
-| Walk sheet | `sprites/jj/walk/sheet-transparent.png` | yes | Yes | 🟢 |
+| Walk sheet | `sprites/jj/walk/sheet-transparent.png` + `walk-1`…`walk-8` | yes | Yes | 🟢 |
 | Attack sheet | `sprites/jj/attack/sheet-transparent.png` | yes | Yes | 🟢 |
 | Hurt sheet | `sprites/jj/hurt/sheet-transparent.png` | yes | Yes | 🟢 |
 | Kick / jump / special / smoke | `sprites/jj/{kick,jump,special,smoke}/` | — | Yes | 🟢 |
@@ -51,10 +51,10 @@ assets/
 
 | Asset | Path | Meta | In git | Status |
 |-------|------|------|--------|--------|
-| Idle sheet | `sprites/enemy/idle/sheet-transparent.png` | yes | Yes | 🟢 |
-| Walk sheet | `sprites/enemy/walk/sheet-transparent.png` | yes | Yes | 🟢 |
-| Attack sheet | `sprites/enemy/attack/sheet-transparent.png` | yes | Yes | 🟢 |
-| Per-archetype unique sheets | `sprites/enemies/{biz,maga,gothm,gothf}/*-sheet.png` | — | Yes | 🟢 |
+| Idle / walk / attack | Shared `sprites/enemy/` generic (not a roster character) | yes | meta only | ⚪ |
+| Business conservative | `sprites/enemies/biz/*-sheet.png` | — | Yes | 🟢 |
+| MAGA | `sprites/enemies/maga/*-sheet.png` | — | Yes | 🟢 |
+| Goth M / Goth F | `sprites/enemies/gothm` + `gothf` | — | Yes | 🟢 |
 
 ## FX tracker
 

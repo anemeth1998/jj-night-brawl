@@ -44,7 +44,7 @@ interface SheetDef {
   tint?: string;
 }
 
-const V = "v=19";
+const V = "v=20";
 
 const MENU_LOOP_COUNT = 50;
 export const MENU_LOOP_SRCS = Array.from(
@@ -78,93 +78,21 @@ const SHEETS: Record<SheetKey, SheetDef> = {
   jjSpecial: { src: `/assets/sprites/jj/special/sheet-transparent.png?${V}`, cols: 2, rows: 2 },
   jjSmoke: { src: `/assets/sprites/jj/smoke/sheet-transparent.png?${V}`, cols: 2, rows: 2 },
 
-  bizIdle: {
-    src: `/assets/sprites/enemies/biz/idle-sheet.png?${V}`,
-    cols: 2,
-    rows: 2,
-    fallbacks: [`/assets/sprites/enemy/idle/sheet-transparent.png?${V}`],
-    tint: "#c8b48a",
-  },
-  bizWalk: {
-    src: `/assets/sprites/enemies/biz/walk-sheet.png?${V}`,
-    cols: 2,
-    rows: 2,
-    fallbacks: [`/assets/sprites/enemy/walk/sheet-transparent.png?${V}`],
-    tint: "#c8b48a",
-  },
-  bizAttack: {
-    src: `/assets/sprites/enemies/biz/attack-sheet.png?${V}`,
-    cols: 2,
-    rows: 2,
-    fallbacks: [`/assets/sprites/enemy/attack/sheet-transparent.png?${V}`],
-    tint: "#c8b48a",
-  },
+  bizIdle: { src: `/assets/sprites/enemies/biz/idle-sheet.png?${V}`, cols: 2, rows: 2 },
+  bizWalk: { src: `/assets/sprites/enemies/biz/walk-sheet.png?${V}`, cols: 2, rows: 2 },
+  bizAttack: { src: `/assets/sprites/enemies/biz/attack-sheet.png?${V}`, cols: 2, rows: 2 },
 
-  magaIdle: {
-    src: `/assets/sprites/enemies/maga/idle-sheet.png?${V}`,
-    cols: 2,
-    rows: 2,
-    fallbacks: [`/assets/sprites/enemy/idle/sheet-transparent.png?${V}`],
-    tint: "#d4543a",
-  },
-  magaWalk: {
-    src: `/assets/sprites/enemies/maga/walk-sheet.png?${V}`,
-    cols: 2,
-    rows: 2,
-    fallbacks: [`/assets/sprites/enemy/walk/sheet-transparent.png?${V}`],
-    tint: "#d4543a",
-  },
-  magaAttack: {
-    src: `/assets/sprites/enemies/maga/attack-sheet.png?${V}`,
-    cols: 2,
-    rows: 2,
-    fallbacks: [`/assets/sprites/enemy/attack/sheet-transparent.png?${V}`],
-    tint: "#d4543a",
-  },
+  magaIdle: { src: `/assets/sprites/enemies/maga/idle-sheet.png?${V}`, cols: 2, rows: 2 },
+  magaWalk: { src: `/assets/sprites/enemies/maga/walk-sheet.png?${V}`, cols: 2, rows: 2 },
+  magaAttack: { src: `/assets/sprites/enemies/maga/attack-sheet.png?${V}`, cols: 2, rows: 2 },
 
-  gothmIdle: {
-    src: `/assets/sprites/enemies/gothm/idle-sheet.png?${V}`,
-    cols: 2,
-    rows: 2,
-    fallbacks: [`/assets/sprites/enemy/idle/sheet-transparent.png?${V}`],
-    tint: "#6a5a88",
-  },
-  gothmWalk: {
-    src: `/assets/sprites/enemies/gothm/walk-sheet.png?${V}`,
-    cols: 2,
-    rows: 2,
-    fallbacks: [`/assets/sprites/enemy/walk/sheet-transparent.png?${V}`],
-    tint: "#6a5a88",
-  },
-  gothmAttack: {
-    src: `/assets/sprites/enemies/gothm/attack-sheet.png?${V}`,
-    cols: 2,
-    rows: 2,
-    fallbacks: [`/assets/sprites/enemy/attack/sheet-transparent.png?${V}`],
-    tint: "#6a5a88",
-  },
+  gothmIdle: { src: `/assets/sprites/enemies/gothm/idle-sheet.png?${V}`, cols: 2, rows: 2 },
+  gothmWalk: { src: `/assets/sprites/enemies/gothm/walk-sheet.png?${V}`, cols: 2, rows: 2 },
+  gothmAttack: { src: `/assets/sprites/enemies/gothm/attack-sheet.png?${V}`, cols: 2, rows: 2 },
 
-  gothfIdle: {
-    src: `/assets/sprites/enemies/gothf/idle-sheet.png?${V}`,
-    cols: 2,
-    rows: 2,
-    fallbacks: [`/assets/sprites/enemy/idle/sheet-transparent.png?${V}`],
-    tint: "#8a4a72",
-  },
-  gothfWalk: {
-    src: `/assets/sprites/enemies/gothf/walk-sheet.png?${V}`,
-    cols: 2,
-    rows: 2,
-    fallbacks: [`/assets/sprites/enemy/walk/sheet-transparent.png?${V}`],
-    tint: "#8a4a72",
-  },
-  gothfAttack: {
-    src: `/assets/sprites/enemies/gothf/attack-sheet.png?${V}`,
-    cols: 2,
-    rows: 2,
-    fallbacks: [`/assets/sprites/enemy/attack/sheet-transparent.png?${V}`],
-    tint: "#8a4a72",
-  },
+  gothfIdle: { src: `/assets/sprites/enemies/gothf/idle-sheet.png?${V}`, cols: 2, rows: 2 },
+  gothfWalk: { src: `/assets/sprites/enemies/gothf/walk-sheet.png?${V}`, cols: 2, rows: 2 },
+  gothfAttack: { src: `/assets/sprites/enemies/gothf/attack-sheet.png?${V}`, cols: 2, rows: 2 },
 
   fxImpact: { src: `/assets/sprites/fx/sheet-transparent.png?${V}`, cols: 2, rows: 2 },
   sky: { src: `/assets/map/sky.png?${V}`, cols: 1, rows: 1 },
@@ -330,6 +258,9 @@ async function loadSheetImage(def: SheetDef, key: SheetKey): Promise<HTMLImageEl
   for (const src of candidates) {
     try {
       const img = await loadImage(src);
+      if (key.startsWith("jj") || key.startsWith("andrew") || key.startsWith("han")) {
+        return img;
+      }
       return keyChromaBoxes(img, def.cols, def.rows);
     } catch {
       /* try next path or placeholder */
