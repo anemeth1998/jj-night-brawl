@@ -44,7 +44,7 @@ interface SheetDef {
   tint?: string;
 }
 
-const V = "v=18";
+const V = "v=19";
 
 const MENU_LOOP_COUNT = 50;
 export const MENU_LOOP_SRCS = Array.from(
@@ -211,25 +211,117 @@ function placeholderSheet(def: SheetDef, label: string): Promise<HTMLImageElemen
   canvas.height = cell * def.rows;
   const ctx = canvas.getContext("2d");
   if (ctx) {
-    const tint = def.tint ?? "#ff2d8a";
+    const tint = def.tint ?? "#6a5a88";
     for (let row = 0; row < def.rows; row++) {
       for (let col = 0; col < def.cols; col++) {
         const x = col * cell;
         const y = row * cell;
-        ctx.fillStyle = row + col === 0 ? "#140e1c" : "#1c1528";
-        ctx.fillRect(x, y, cell, cell);
+        ctx.clearRect(x, y, cell, cell);
         ctx.fillStyle = tint;
         ctx.fillRect(x + 44, y + 28, 40, 72);
-        ctx.fillStyle = "#f6eef8";
+        ctx.fillStyle = "#d8d0e0";
         ctx.fillRect(x + 54, y + 16, 20, 18);
-        ctx.strokeStyle = "rgba(255,255,255,0.18)";
-        ctx.strokeRect(x + 2, y + 2, cell - 4, cell - 4);
       }
     }
-    ctx.fillStyle = "#f6eef8";
+    ctx.fillStyle = "#d8d0e0";
     ctx.font = "bold 14px sans-serif";
     ctx.fillText(label.slice(0, 10), 8, 18);
   }
+  return loadImage(canvas.toDataURL("image/png"));
+}
+
+function chromaHue(r: number, g: number, b: number, a: number) {
+  if (a < 8) return false;
+  if (r >= 200 && b >= 200 && g <= 90) return true;
+  return r >= 120 && b >= 70 && g <= 120 && r - g >= 40 && b - g >= 15;
+}
+
+function colorDist(a: [number, number, number], b: [number, number, number]) {
+  const dr = a[0] - b[0];
+  const dg = a[1] - b[1];
+  const db = a[2] - b[2];
+  return Math.hypot(dr, dg, db);
+}
+
+/** Drop leftover magenta / dusty-rose key boxes without eating JJ's pink hair. */
+function keyChromaBoxes(img: HTMLImageElement, cols: number, rows: number): Promise<HTMLImageElement> {
+  const w = img.naturalWidth || img.width;
+  const h = img.naturalHeight || img.height;
+  if (!w || !h) return Promise.resolve(img);
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return Promise.resolve(img);
+  ctx.drawImage(img, 0, 0);
+  let data: ImageData;
+  try {
+    data = ctx.getImageData(0, 0, w, h);
+  } catch {
+    return Promise.resolve(img);
+  }
+  const cw = Math.max(1, Math.floor(w / cols));
+  const ch = Math.max(1, Math.floor(h / rows));
+  const px = data.data;
+  let cleared = 0;
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const samples: [number, number, number][] = [];
+      for (let y = row * ch; y < row * ch + ch; y++) {
+        for (let x = col * cw; x < col * cw + cw; x++) {
+          const i = (y * w + x) * 4;
+          const r = px[i]!;
+          const g = px[i + 1]!;
+          const b = px[i + 2]!;
+          const a = px[i + 3]!;
+          if (chromaHue(r, g, b, a)) samples.push([r, g, b]);
+        }
+      }
+      if (samples.length < 0.08 * cw * ch) continue;
+      const mid = Math.floor(samples.length / 2);
+      const key: [number, number, number] = [
+        samples.map((s) => s[0]).sort((a, b) => a - b)[mid]!,
+        samples.map((s) => s[1]).sort((a, b) => a - b)[mid]!,
+        samples.map((s) => s[2]).sort((a, b) => a - b)[mid]!,
+      ];
+      for (let y = row * ch; y < row * ch + ch; y++) {
+        for (let x = col * cw; x < col * cw + cw; x++) {
+          const i = (y * w + x) * 4;
+          const r = px[i]!;
+          const g = px[i + 1]!;
+          const b = px[i + 2]!;
+          const a = px[i + 3]!;
+          if (a < 8) continue;
+          if (chromaHue(r, g, b, a) && colorDist([r, g, b], key) <= 48) {
+            px[i + 3] = 0;
+            cleared += 1;
+          }
+        }
+      }
+      for (let y = row * ch; y < row * ch + ch; y++) {
+        for (let x = col * cw; x < col * cw + cw; x++) {
+          const i = (y * w + x) * 4;
+          if (!chromaHue(px[i]!, px[i + 1]!, px[i + 2]!, px[i + 3]!)) continue;
+          const neighbors = [
+            [x - 1, y],
+            [x + 1, y],
+            [x, y - 1],
+            [x, y + 1],
+          ];
+          const nextToEmpty = neighbors.some(([nx, ny]) => {
+            if (nx < col * cw || ny < row * ch || nx >= col * cw + cw || ny >= row * ch + ch) return true;
+            return px[(ny * w + nx) * 4 + 3]! < 8;
+          });
+          if (nextToEmpty) {
+            px[i + 3] = 0;
+            cleared += 1;
+          }
+        }
+      }
+    }
+  }
+  if (!cleared) return Promise.resolve(img);
+  ctx.putImageData(data, 0, 0);
   return loadImage(canvas.toDataURL("image/png"));
 }
 
@@ -237,7 +329,8 @@ async function loadSheetImage(def: SheetDef, key: SheetKey): Promise<HTMLImageEl
   const candidates = [def.src, ...(def.fallbacks ?? [])];
   for (const src of candidates) {
     try {
-      return await loadImage(src);
+      const img = await loadImage(src);
+      return keyChromaBoxes(img, def.cols, def.rows);
     } catch {
       /* try next path or placeholder */
     }

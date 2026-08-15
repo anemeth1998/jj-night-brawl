@@ -7,7 +7,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0 --port 5173",
     "typecheck": "tsc --noEmit",
-    "check:assets": "node ./scripts/check-assets.mjs"
+    "check:assets": "node ./scripts/check-assets.mjs && python3 ./scripts/key-chroma-boxes.py --check"
   },
   "dependencies": {
     "react": "^19.1.1",
