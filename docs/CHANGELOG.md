@@ -6,6 +6,17 @@ All notable project-level notes for this repo. Gameplay versioning can split lat
 
 ### Added
 
+- Playable web app: Vite + React shell in `web/` (`npm run dev`)
+- Andrew / Han punch, kick, and hurt combat stills wired in-engine
+- Key leftover magenta / dusty-rose boxes off enemy walk/attack and impact FX sheets
+- Restore JJ's 8-frame walk cycle (`walk-1`…`walk-8`) and drop the generic tank-guy enemy sheet
+- Square Endless thumbs for JJ / Andrew / Han (`assets/ui/thumbs/`)
+- Andrew and Han 4-frame punch and kick cycles (2×2 sheets)
+- JJ Endless character-select thumbnail (`assets/ui/jj-frames/f001.jpg`)
+- Andrew and Han 8-frame walk cycles, same grid as JJ
+- Drop leftover generic tank-guy `sprites/enemy/` sheets so Grok/Vite preview cannot fall back to them
+- Restored JJ / enemy / FX runtime sheets from the 2026-08-12 playable backup
+- Asset loader fallbacks so a missing PNG no longer blocks boot
 - `docs/` living production documentation set:
   - `docs/README.md` — index
   - `docs/PRODUCTION_BOARD.md` — status board, priorities, blockers, tables

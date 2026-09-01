@@ -2,7 +2,7 @@
 
 Living production documentation for **JJ: Night Brawl**, a 32-bit Streets of Rage–style beat-em-up.
 
-Use this folder as the working index for design, character, asset, and shipping status. Game code lives under `ios/`; binary art is tracked separately (see asset docs).
+Use this folder as the working index for design, character, asset, and shipping status. Playable game code lives under `web/`; iOS stubs are under `ios/`. Binary art is tracked in `assets/` (see asset docs).
 
 ## Documents
 

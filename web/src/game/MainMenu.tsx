@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { AssetMap, LoadedSheet } from "./assets";
+import { CHAR_THUMBS } from "./assets";
 import { currentTrack, playTrack, playMenuTheme, sfx, stopTrack, TRACKS } from "./audio";
 import {
   ACHIEVEMENTS,
@@ -57,6 +58,14 @@ const GALLERY: { label: string; sub: string; key: keyof AssetMap; unlock: string
   { label: "JJ", sub: "Jump", key: "jjJump", unlock: "jjJump" },
   { label: "JJ", sub: "Riff", key: "jjSpecial", unlock: "jjSpecial" },
   { label: "JJ", sub: "Smoke", key: "jjSmoke", unlock: "jjSmoke" },
+  { label: "Andrew", sub: "Walk", key: "andrewWalk", unlock: "andrewWalk" },
+  { label: "Andrew", sub: "Punch", key: "andrewAttack", unlock: "andrewAttack" },
+  { label: "Andrew", sub: "Kick", key: "andrewKick", unlock: "andrewKick" },
+  { label: "Andrew", sub: "Hurt", key: "andrewHurt", unlock: "andrewHurt" },
+  { label: "Han", sub: "Walk", key: "hanWalk", unlock: "hanWalk" },
+  { label: "Han", sub: "Punch", key: "hanAttack", unlock: "hanAttack" },
+  { label: "Han", sub: "Kick", key: "hanKick", unlock: "hanKick" },
+  { label: "Han", sub: "Hurt", key: "hanHurt", unlock: "hanHurt" },
   { label: "Suit", sub: "White collar", key: "bizIdle", unlock: "biz" },
   { label: "Co-opter", sub: "MAGA", key: "magaIdle", unlock: "maga" },
   { label: "Goth", sub: "Man", key: "gothmIdle", unlock: "gothm" },
@@ -270,7 +279,11 @@ export function MainMenu({
             <Panel title="Gallery">
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {GALLERY.map((g) => {
-                  const open = profile.unlocks.gallery.includes(g.unlock) || g.unlock.startsWith("jj");
+                  const open =
+                    profile.unlocks.gallery.includes(g.unlock) ||
+                    g.unlock.startsWith("jj") ||
+                    (g.unlock.startsWith("andrew") && profile.shop.ownedChars.includes("andrew")) ||
+                    (g.unlock.startsWith("han") && profile.shop.ownedChars.includes("han"));
                   return (
                     <figure key={g.key} className="flex flex-col items-center rounded-lg border border-border bg-bg/80 p-2">
                       {assets && open ? (
@@ -382,13 +395,29 @@ export function MainMenu({
           {screen === "endless" && (
             <Panel title="Endless">
               <p className="mb-3 text-xs text-muted">Waves do not stop. Pick a fighter. Shop upgrades still apply.</p>
-              <button
-                type="button"
-                onClick={() => onOpen("chars")}
-                className="min-h-11 w-full rounded-lg border border-border bg-surface-2 text-sm font-semibold text-fg"
-              >
-                Character: {CHARACTERS[pendingChar].name}
-              </button>
+              <div className="flex flex-col gap-2">
+                {(Object.keys(CHARACTERS) as CharacterId[]).map((id) => {
+                  const c = CHARACTERS[id];
+                  const owned = profile.shop.ownedChars.includes(id);
+                  return (
+                    <CharCard
+                      key={id}
+                      id={id}
+                      name={c.name}
+                      role={c.role}
+                      blurb={c.blurb}
+                      owned={owned}
+                      active={pendingChar === id}
+                      onPick={() => {
+                        onSetChar(id);
+                        onSetMode("endless");
+                        onHoverChar?.(id);
+                      }}
+                      onHover={onHoverChar}
+                    />
+                  );
+                })}
+              </div>
               <button
                 type="button"
                 onClick={() =>
@@ -399,9 +428,9 @@ export function MainMenu({
                     slotIndex: nextEmptyOrLast(profile),
                   })
                 }
-                className="mt-2 min-h-11 w-full rounded-lg bg-primary text-sm font-bold text-primary-fg"
+                className="mt-3 min-h-11 w-full rounded-lg bg-primary text-sm font-bold text-primary-fg"
               >
-                Start Endless
+                Start Endless as {CHARACTERS[pendingChar].name}
               </button>
               <BackButton onClick={onBack} />
             </Panel>
@@ -619,12 +648,7 @@ function CharCard({
   onHover?: (id: CharacterId | null) => void;
 }) {
   const [hot, setHot] = useState(false);
-  const still =
-    id === "andrew"
-      ? "/assets/ui/andrew-frames/f001.jpg"
-      : id === "han"
-        ? "/assets/ui/han-frames/f001.jpg"
-        : "/assets/sprites/jj/idle/sheet-transparent.png";
+  const still = CHAR_THUMBS[id];
   return (
     <button
       type="button"
@@ -654,8 +678,8 @@ function CharCard({
             : "border-border/70 bg-bg/55 text-fg"
       }`}
     >
-      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-md bg-black">
-        <img src={still} alt="" className="pixelated h-full w-full object-cover object-right" />
+      <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-md bg-black">
+        <img src={still} alt={name} className="pixelated h-full w-full object-cover object-center" />
       </div>
       <div className="min-w-0">
         <p className="text-sm font-semibold">

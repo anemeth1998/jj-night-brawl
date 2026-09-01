@@ -957,7 +957,7 @@ function updatePlayer(state: GameState, dt: number) {
   p.y += p.vy * dt;
   updatePhysics(p, dt);
   clampFighter(p, state.stageWidth);
-  const walkFrames = state.characterId === "jj" ? 8 : 4;
+  const walkFrames = 8;
   updateFighterAnim(p, dt, moving && canAct(p) && grounded(p), walkFrames, PLAYER_WALK_FPS);
 }
 
@@ -1188,10 +1188,20 @@ function enemySheet(type: EnemyType | undefined, anim: "idle" | "walk" | "attack
 function sheetFor(f: Fighter, assets: AssetMap, characterId?: string) {
   if (f.kind === "player") {
     if (characterId === "andrew") {
+      if (f.anim === "attack") {
+        if (f.attackKind === "kick") return assets.andrewKick;
+        return assets.andrewAttack;
+      }
+      if (f.anim === "hurt" || f.dead) return assets.andrewHurt;
       if (f.anim === "walk") return assets.andrewWalk;
       return assets.andrewIdle;
     }
     if (characterId === "han") {
+      if (f.anim === "attack") {
+        if (f.attackKind === "kick") return assets.hanKick;
+        return assets.hanAttack;
+      }
+      if (f.anim === "hurt" || f.dead) return assets.hanHurt;
       if (f.anim === "walk") return assets.hanWalk;
       return assets.hanIdle;
     }

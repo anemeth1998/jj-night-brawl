@@ -4,8 +4,9 @@
 Asset pack from project workspace as of 2026-08-06.
 
 ## What is not fully here yet
-- Complete Swift/Xcode project (GameEngine.swift, etc.)
-- Full web TypeScript engine
+- Complete Swift/Xcode project (GameEngine.swift, ContentView, etc.)
+
+Web engine is in `web/src/game/` with a Vite app shell (`cd web && npm run dev`).
 
 If you still have JJNightBrawl-FOR-XCODE.tar.gz on a device or in chat downloads, add it under releases/ or the repo root in a follow-up commit.
 

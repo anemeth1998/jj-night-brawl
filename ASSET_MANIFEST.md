@@ -25,6 +25,8 @@ Full 16:9 alley loops. Same locked camera as Menu Select (brick wall, character 
 | Path | Frames | Motion |
 |---|---|---|
 | `assets/ui/menu-select-loop.mp4` | video (+ 50 PNG frames in project) | JJ smokes / idle |
+| `assets/ui/jj-frames/f001.jpg` | 1280×720 still from the alley loop | JJ alley still |
+| `assets/ui/thumbs/{jj,andrew,han}.jpg` | 512×512 square crops | Endless / character-select thumbnails |
 | `assets/ui/andrew-hover.mp4` | 50 JPG `assets/ui/andrew-frames/f001–f050.jpg` | Types on laptop, drinks a soda, back to typing |
 | `assets/ui/han-hover.mp4` | 50 JPG `assets/ui/han-frames/f001–f050.jpg` | Types on phone, pets a cat that walks by |
 
@@ -50,14 +52,26 @@ Matched pose sheet (Andrew + Han): front-idle, kneel, crouch, sit-cross-legged, 
 
 ## Sprites (fighter sheets)
 
-Binary PNGs/GIFs for in-engine fighters may still live in `jj-night-brawl-assets-backup.tar.gz` until restored.
+Runtime fighter sheets are in git (restored 2026-08-15 from `backup/web-playable-20260812`).
 
 ### JJ sprites
-- sprites/jj/idle|walk|attack|hurt/sheet-transparent.png (+ frames, meta)
-- sprites/jj/reference.jpg
+- sprites/jj/idle|walk|attack|kick|hurt|jump|special|smoke/sheet-transparent.png
+- sprites/jj/walk/walk-1.png … walk-8.png (8-frame cycle)
+- sprites/jj/reference.jpg (still external)
 
-### Enemies
-- sprites/enemy/idle|walk|attack/sheet-transparent.png
+### Andrew / Han sprites
+- sprites/andrew|han/idle/sheet-transparent.png
+- sprites/andrew|han/walk/sheet-transparent.png + walk-1 … walk-8
+- sprites/andrew|han/attack/sheet-transparent.png + punch-1 … punch-4 (2×2)
+- sprites/andrew|han/kick/sheet-transparent.png + kick-1 … kick-4 (2×2)
+- sprites/andrew|han/hurt/sheet-transparent.png
+
+### Enemies (MAGA / business conservative / goth only)
+- sprites/enemies/biz/{idle,walk,attack}-sheet.png
+- sprites/enemies/maga/{idle,walk,attack}-sheet.png
+- sprites/enemies/gothm/{idle,walk,attack}-sheet.png
+- sprites/enemies/gothf/{idle,walk,attack}-sheet.png
+- Do **not** ship `sprites/enemy/` generic tank-guy sheets
 
 ### FX
 - sprites/fx/sheet-transparent.png
