@@ -1,0 +1,8 @@
+{
+  "mode": "impact",
+  "rows": 2,
+  "cols": 2,
+  "cell_size": 128,
+  "frame_labels": ["impact-1", "impact-2", "impact-3", "impact-4"],
+  "source": "sprites/fx/pipeline-meta.json"
+}

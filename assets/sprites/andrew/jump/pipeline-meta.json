@@ -1,0 +1,13 @@
+{
+  "mode": "jump",
+  "rows": 2,
+  "cols": 2,
+  "cell_size": 128,
+  "frame_labels": [
+    "jump-1",
+    "jump-2",
+    "jump-3",
+    "jump-4"
+  ],
+  "source": "sprites/jj/jump/pipeline-meta.json"
+}

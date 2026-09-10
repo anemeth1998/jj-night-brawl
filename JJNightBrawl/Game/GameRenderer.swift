@@ -15,7 +15,7 @@ enum GameRenderer {
         ctx.translateBy(x: shakeX, y: shakeY)
         ctx.interpolationQuality = .none
 
-        drawParallax(ctx: ctx, assets: assets, camX: state.cameraX)
+        drawParallax(ctx: ctx, assets: assets, camX: state.cameraX, stageIndex: state.stageIndex)
 
         var fighters: [Fighter] = [state.player] + state.enemies
         fighters.sort { a, b in
@@ -23,7 +23,7 @@ enum GameRenderer {
             return a.z < b.z
         }
         for f in fighters {
-            drawFighter(ctx: ctx, f: f, assets: assets, camX: state.cameraX)
+            drawFighter(ctx: ctx, f: f, assets: assets, camX: state.cameraX, playerId: state.selectedFighter)
         }
         if state.hasGun && !state.player.dead {
             drawPlayerGun(
@@ -86,22 +86,23 @@ enum GameRenderer {
 
     // MARK: - Parallax
 
-    private static func drawParallax(ctx: CGContext, assets: GameAssets, camX: CGFloat) {
-        if let sky = assets.sky {
+    private static func drawParallax(ctx: CGContext, assets: GameAssets, camX: CGFloat, stageIndex: Int) {
+        let maps = assets.maps(forStageIndex: stageIndex)
+        if let sky = maps.sky {
             sky.draw(in: CGRect(x: 0, y: 0, width: viewW, height: viewH))
         } else {
             ctx.setFillColor(UIColor(red: 0.05, green: 0.03, blue: 0.1, alpha: 1).cgColor)
             ctx.fill(CGRect(x: 0, y: 0, width: viewW, height: viewH))
         }
 
-        if let far = assets.farBg {
+        if let far = maps.far {
             let farOff = (camX * 0.12).truncatingRemainder(dividingBy: viewW)
             for i in -1...1 {
                 far.draw(in: CGRect(x: -farOff + CGFloat(i) * viewW, y: 40, width: viewW, height: viewH * 0.72))
             }
         }
 
-        if let mid = assets.midBg {
+        if let mid = maps.mid {
             let midOff = (camX * 0.4).truncatingRemainder(dividingBy: viewW)
             let dstH = laneTop + 10
             for i in -1...1 {
@@ -136,10 +137,10 @@ enum GameRenderer {
 
     // MARK: - Fighters
 
-    private static func drawFighter(ctx: CGContext, f: Fighter, assets: GameAssets, camX: CGFloat) {
+    private static func drawFighter(ctx: CGContext, f: Fighter, assets: GameAssets, camX: CGFloat, playerId: String = "jj") {
         let sheet: SpriteSheet
         if f.kind == .player {
-            sheet = assets.sheetForPlayer(anim: f.anim, attackKind: f.attackKind)
+            sheet = assets.sheetForPlayer(anim: f.anim, attackKind: f.attackKind, fighter: playerId)
         } else {
             sheet = assets.sheetForEnemy(type: f.enemyType, anim: f.anim)
         }
@@ -566,26 +567,14 @@ enum GameRenderer {
 
     // MARK: - Overlays
 
+    /// Title plate: full-bleed `title_screen`. Also the backdrop under the main menu / char
+    /// select so title ↔ menu crossfades over the same painting.
+    /// The painting carries the wordmark + yellow PRESS START; no CTA (SwiftUI or CG) is drawn
+    /// on top, and no bottom vignette — it used to sit right over the painted PRESS START.
     static func drawTitle(ctx: CGContext, assets: GameAssets, now: CFTimeInterval) {
         // Prefer full-bleed title art when present (imported title_screen asset).
         if let art = assets.titleScreen {
             drawAspectFill(ctx: ctx, image: art, in: CGRect(x: 0, y: 0, width: viewW, height: viewH))
-            // Soft bottom vignette so TAP TO START stays readable.
-            let gradH: CGFloat = 120
-            let colors = [
-                UIColor(red: 0.02, green: 0.01, blue: 0.04, alpha: 0).cgColor,
-                UIColor(red: 0.02, green: 0.01, blue: 0.04, alpha: 0.78).cgColor
-            ] as CFArray
-            if let space = CGColorSpace(name: CGColorSpace.sRGB),
-               let grad = CGGradient(colorsSpace: space, colors: colors, locations: [0, 1]) {
-                ctx.drawLinearGradient(
-                    grad,
-                    start: CGPoint(x: viewW / 2, y: viewH - gradH),
-                    end: CGPoint(x: viewW / 2, y: viewH),
-                    options: []
-                )
-            }
-            drawTapToStart(ctx: ctx, now: now, y: viewH - 52)
             return
         }
 
@@ -636,7 +625,7 @@ enum GameRenderer {
                       dest: CGRect(x: viewW - 170 - drawW / 2, y: viewH - 64 - drawH, width: drawW, height: drawH),
                       flipX: false)
         }
-        drawTapToStart(ctx: ctx, now: now, y: viewH - 52)
+        // Fallback panel too: SwiftUI still owns the button.
     }
 
     /// Aspect-fill image into `rect` (centered crop).
@@ -657,29 +646,6 @@ enum GameRenderer {
         ctx.interpolationQuality = .none
         image.draw(in: dest)
         ctx.restoreGState()
-    }
-
-    private static func drawTapToStart(ctx: CGContext, now: CFTimeInterval, y: CGFloat) {
-        let pulse = 0.72 + 0.28 * sin(now * 3.2)
-        let label = "TAP TO START" as NSString
-        let attrs: [NSAttributedString.Key: Any] = [
-            .font: UIFont.boldSystemFont(ofSize: 22),
-            .foregroundColor: UIColor(red: 1, green: 0.18, blue: 0.54, alpha: pulse)
-        ]
-        let sz = label.size(withAttributes: attrs)
-        // Subtle pill behind the prompt
-        let padX: CGFloat = 22
-        let padY: CGFloat = 10
-        let pill = CGRect(
-            x: (viewW - sz.width) / 2 - padX,
-            y: y - padY,
-            width: sz.width + padX * 2,
-            height: sz.height + padY * 2
-        )
-        roundRect(ctx, pill, r: 18,
-                  fill: UIColor(red: 0.04, green: 0.02, blue: 0.07, alpha: 0.72),
-                  stroke: UIColor(red: 1, green: 0.18, blue: 0.54, alpha: 0.55 * pulse))
-        label.draw(at: CGPoint(x: (viewW - sz.width) / 2, y: y), withAttributes: attrs)
     }
 
     static func drawBanner(ctx: CGContext, title: String, subtitle: String) {

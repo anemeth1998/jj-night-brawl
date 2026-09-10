@@ -1,0 +1,8 @@
+{
+  "mode": "attack",
+  "rows": 2,
+  "cols": 2,
+  "cell_size": 128,
+  "frame_labels": ["attack-1", "attack-2", "attack-3", "attack-4"],
+  "source": "sprites/enemy/attack/pipeline-meta.json"
+}

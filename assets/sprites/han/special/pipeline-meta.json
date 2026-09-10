@@ -1,0 +1,13 @@
+{
+  "mode": "special",
+  "rows": 2,
+  "cols": 2,
+  "cell_size": 128,
+  "frame_labels": [
+    "special-1",
+    "special-2",
+    "special-3",
+    "special-4"
+  ],
+  "source": "sprites/jj/special/pipeline-meta.json"
+}

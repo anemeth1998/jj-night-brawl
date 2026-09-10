@@ -9,11 +9,20 @@
 /* Begin PBXBuildFile section */
 		2559DF0352A544008BB713BC /* GameCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B308C08DC974167BC9497FE /* GameCanvasView.swift */; };
 		329B0EE6D46C406D9067CFF6 /* GameAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2364FA8D24AC458A9E739A4B /* GameAssets.swift */; };
+		4D454E5500000000000000B1 /* MenuControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D454E5500000000000000A1 /* MenuControls.swift */; };
+		4D454E5500000000000000B2 /* OptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D454E5500000000000000A2 /* OptionsView.swift */; };
+		4D454E5500000000000000B3 /* CreditsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D454E5500000000000000A3 /* CreditsView.swift */; };
+		4D454E5500000000000000B4 /* StageLoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D454E5500000000000000A4 /* StageLoadingView.swift */; };
 		4EAF1B65008F4AE0AB89DD4F /* GameEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5AE5973B5A14F139F38C542 /* GameEngine.swift */; };
 		56897D595E464714B342E24A /* GameRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65FE464524464253BCFDC64D /* GameRenderer.swift */; };
+		690011523052171A0025B52F /* Running Animation .MP4 in Resources */ = {isa = PBXBuildFile; fileRef = 690011513052171A0025B52F /* Running Animation .MP4 */; };
 		763B84455AD34B4CB4BA41F2 /* GameTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20D0E330D56341CCB9547353 /* GameTypes.swift */; };
 		7B53F03EAED940EC9D0D0E95 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CDF2DDDC5A814A1899FEE2DB /* Assets.xcassets */; };
+		A1B2C3D4E5F60718293A4B5C /* tdm-8bit.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60718293A4B5C6D /* tdm-8bit.mp3 */; };
+		A60718293A4B5C6D7E8F9013 /* andrew-hover.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B5C6D7E8F91 /* andrew-hover.mp4 */; };
+		B60718293A4B5C6D7E8F9014 /* han-hover.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B5C6D7E8F92 /* han-hover.mp4 */; };
 		D38F3988DAD74F5A95E238D3 /* JJNightBrawlApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34CFDDAF3AE34535978C7132 /* JJNightBrawlApp.swift */; };
+		F60718293A4B5C6D7E8F9012 /* menu-select-loop.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B5C6D7E8F90 /* menu-select-loop.mp4 */; };
 		FC05CC4419B34714894B1E2F /* GameAudio.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C586283381E47A397BC3AAF /* GameAudio.swift */; };
 /* End PBXBuildFile section */
 
@@ -21,11 +30,20 @@
 		20D0E330D56341CCB9547353 /* GameTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameTypes.swift; sourceTree = "<group>"; };
 		2364FA8D24AC458A9E739A4B /* GameAssets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameAssets.swift; sourceTree = "<group>"; };
 		34CFDDAF3AE34535978C7132 /* JJNightBrawlApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JJNightBrawlApp.swift; sourceTree = "<group>"; };
+		4D454E5500000000000000A1 /* MenuControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuControls.swift; sourceTree = "<group>"; };
+		4D454E5500000000000000A2 /* OptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OptionsView.swift; sourceTree = "<group>"; };
+		4D454E5500000000000000A3 /* CreditsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditsView.swift; sourceTree = "<group>"; };
+		4D454E5500000000000000A4 /* StageLoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StageLoadingView.swift; sourceTree = "<group>"; };
 		5B308C08DC974167BC9497FE /* GameCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameCanvasView.swift; sourceTree = "<group>"; };
 		5C386F9DC5504187B41CF13C /* JJNightBrawl.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = JJNightBrawl.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		65FE464524464253BCFDC64D /* GameRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameRenderer.swift; sourceTree = "<group>"; };
+		690011513052171A0025B52F /* Running Animation .MP4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Running Animation .MP4"; sourceTree = "<group>"; };
 		7C586283381E47A397BC3AAF /* GameAudio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameAudio.swift; sourceTree = "<group>"; };
+		B2C3D4E5F60718293A4B5C6D /* tdm-8bit.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "tdm-8bit.mp3"; sourceTree = "<group>"; };
 		CDF2DDDC5A814A1899FEE2DB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		E5F60718293A4B5C6D7E8F90 /* menu-select-loop.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "menu-select-loop.mp4"; sourceTree = "<group>"; };
+		E5F60718293A4B5C6D7E8F91 /* andrew-hover.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "andrew-hover.mp4"; sourceTree = "<group>"; };
+		E5F60718293A4B5C6D7E8F92 /* han-hover.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "han-hover.mp4"; sourceTree = "<group>"; };
 		F5AE5973B5A14F139F38C542 /* GameEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameEngine.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -40,6 +58,17 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0718293A4B5C6D7E8F901234 /* Video */ = {
+			isa = PBXGroup;
+			children = (
+				690011513052171A0025B52F /* Running Animation .MP4 */,
+				E5F60718293A4B5C6D7E8F90 /* menu-select-loop.mp4 */,
+				E5F60718293A4B5C6D7E8F91 /* andrew-hover.mp4 */,
+				E5F60718293A4B5C6D7E8F92 /* han-hover.mp4 */,
+			);
+			path = Video;
+			sourceTree = "<group>";
+		};
 		074BA1B529AC4C4D918DE7D3 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -61,14 +90,44 @@
 			path = Game;
 			sourceTree = "<group>";
 		};
+		4D454E5500000000000000C0 /* Menu */ = {
+			isa = PBXGroup;
+			children = (
+				4D454E5500000000000000A1 /* MenuControls.swift */,
+				4D454E5500000000000000A2 /* OptionsView.swift */,
+				4D454E5500000000000000A3 /* CreditsView.swift */,
+				4D454E5500000000000000A4 /* StageLoadingView.swift */,
+			);
+			path = Menu;
+			sourceTree = "<group>";
+		};
 		682C0E6EB2B5494FBC044166 /* JJNightBrawl */ = {
 			isa = PBXGroup;
 			children = (
 				39B4698D00EB41C0B1731F71 /* Game */,
+				4D454E5500000000000000C0 /* Menu */,
 				34CFDDAF3AE34535978C7132 /* JJNightBrawlApp.swift */,
 				CDF2DDDC5A814A1899FEE2DB /* Assets.xcassets */,
+				D4E5F60718293A4B5C6D7E8F /* Resources */,
 			);
 			path = JJNightBrawl;
+			sourceTree = "<group>";
+		};
+		C3D4E5F60718293A4B5C6D7E /* Audio */ = {
+			isa = PBXGroup;
+			children = (
+				B2C3D4E5F60718293A4B5C6D /* tdm-8bit.mp3 */,
+			);
+			path = Audio;
+			sourceTree = "<group>";
+		};
+		D4E5F60718293A4B5C6D7E8F /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				C3D4E5F60718293A4B5C6D7E /* Audio */,
+				0718293A4B5C6D7E8F901234 /* Video */,
+			);
+			path = Resources;
 			sourceTree = "<group>";
 		};
 		EF4064E130524801A58CBC0D = {
@@ -133,6 +192,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				7B53F03EAED940EC9D0D0E95 /* Assets.xcassets in Resources */,
+				A1B2C3D4E5F60718293A4B5C /* tdm-8bit.mp3 in Resources */,
+				F60718293A4B5C6D7E8F9012 /* menu-select-loop.mp4 in Resources */,
+				A60718293A4B5C6D7E8F9013 /* andrew-hover.mp4 in Resources */,
+				690011523052171A0025B52F /* Running Animation .MP4 in Resources */,
+				B60718293A4B5C6D7E8F9014 /* han-hover.mp4 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -150,6 +214,10 @@
 				56897D595E464714B342E24A /* GameRenderer.swift in Sources */,
 				763B84455AD34B4CB4BA41F2 /* GameTypes.swift in Sources */,
 				D38F3988DAD74F5A95E238D3 /* JJNightBrawlApp.swift in Sources */,
+				4D454E5500000000000000B1 /* MenuControls.swift in Sources */,
+				4D454E5500000000000000B2 /* OptionsView.swift in Sources */,
+				4D454E5500000000000000B3 /* CreditsView.swift in Sources */,
+				4D454E5500000000000000B4 /* StageLoadingView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -214,7 +282,6 @@
 				INFOPLIST_FILE = JJNightBrawl/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "JJ Night Brawl";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = NO;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -289,7 +356,6 @@
 				INFOPLIST_FILE = JJNightBrawl/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "JJ Night Brawl";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = NO;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";

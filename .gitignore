@@ -9,6 +9,7 @@ xcuserdata/
 *.xccheckout
 *.xcscmblueprint
 DerivedData/
+.derivedData/
 build/
 Build/
 *.moved-aside
@@ -33,6 +34,10 @@ Carthage/Build/
 *.orig
 *.swp
 *~
+.tmp_*
+_p0-poke/
+_poke_shots/
+backups/
 
 # Python
 __pycache__/

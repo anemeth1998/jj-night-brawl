@@ -1,0 +1,13 @@
+{
+  "mode": "run",
+  "rows": 1,
+  "cols": 16,
+  "cell_size": 128,
+  "scale": "high-quality downsample, nearest-neighbor draw",
+  "palette": "source colors (no snap \u2014 snap warped hair/hoodie)",
+  "source": "JJNightBrawl/Resources/Video/Running Animation .MP4",
+  "bake": "runtime cycle-detect, 16 in-betweens, cache jj_run_smooth_v3.png",
+  "fps": 32,
+  "cycle_seconds": 0.5,
+  "atlas_fallback": "Assets.xcassets/jj_run.imageset 4x2"
+}
