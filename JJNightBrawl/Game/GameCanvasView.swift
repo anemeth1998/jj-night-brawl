@@ -51,12 +51,10 @@ final class GameCanvasUIView: UIView {
             self.maybeAutoStartAfterAssetsReady()
         }
         // Defer audio until after first layout — AVAudioSession can stall first paint on device.
+        // Menu music is the soundtrack inside menu-select-loop.mp4 (CharSelectLoopStackView);
+        // TDM is held back for Credits, so nothing starts it here.
         DispatchQueue.main.async { [weak self] in
             self?.engine.audio.unlock()
-            let ph = self?.engine.state.phase
-            if ph == .title || ph == .mainMenu || ph == .charSelect {
-                self?.engine.audio.playMenuTheme()
-            }
         }
         installLifecycleObservers()
     }
@@ -112,10 +110,6 @@ final class GameCanvasUIView: UIView {
             self?.displayLink?.isPaused = false
             self?.lastTime = CACurrentMediaTime()
             self?.engine.audio.unlock()
-            let ph = self?.engine.state.phase
-            if ph == .title || ph == .mainMenu || ph == .charSelect {
-                self?.engine.audio.playMenuTheme()
-            }
         })
     }
 
@@ -170,6 +164,14 @@ final class GameCanvasUIView: UIView {
             engine.playerSpecialFrames = assets.sheetForPlayer(
                 anim: .attack, attackKind: .special, fighter: engine.state.selectedFighter
             ).frameCount
+            // Frames in the sheet the current melee move actually draws with (variant sheets
+            // from the clip pipeline can be 8–12; the legacy atlases are 4).
+            if let kind = engine.state.player.attackKind, kind != .special {
+                engine.playerAttackFrames = assets.sheetForPlayer(
+                    anim: .attack, attackKind: kind, variant: engine.state.player.attackVariant,
+                    fighter: engine.state.selectedFighter
+                ).frameCount
+            }
             // Warm the next stage's parallax while the loading clip plays.
             if engine.state.phase == .loading, let pending = engine.state.pendingStageIndex {
                 _ = assets.maps(forStageIndex: pending)
@@ -664,7 +666,7 @@ struct ContentView: View {
                 // 2 + 3. Alley loop + dim. Fades in over the title plate; stays alive across routes.
                 Group {
                     if isMenuPhase && bridge.assetsReady {
-                        CharSelectLoopStack(activeId: alleyActiveId)
+                        CharSelectLoopStack(activeId: alleyActiveId, audio: bridge.engine?.audio)
                             .ignoresSafeArea()
                             .allowsHitTesting(false)
                             .transition(.opacity)
@@ -821,22 +823,21 @@ struct ContentView: View {
             if newPhase == .charSelect {
                 previewFighter = Self.lastFighter()
             }
-            // TDM: loop on title / menu / select; fade out once before Act I. `playMenuTheme`
-            // no-ops while already looping, so title ↔ menu ↔ select never restarts it.
+            // Menu music lives in menu-select-loop.mp4 (CharSelectLoopStackView plays its audio
+            // track on mainMenu / charSelect and fades it on dismantle). TDM is parked for
+            // Credits; make sure it is never left looping into combat.
             if newPhase == .title || newPhase == .mainMenu || newPhase == .charSelect {
                 bridge.engine?.audio.unlock()
-                bridge.engine?.audio.playMenuTheme()
             } else {
                 bridge.engine?.audio.stopMenuTheme()
             }
         }
         .onChange(of: bridge.assetsReady) { ready in
-            // First paint of title after async load — start theme once assets are in.
+            // First paint of title after async load — bring the SFX engine up once assets are in.
             guard ready else { return }
             muted = bridge.engine?.audio.isMuted ?? muted
             if phase == .title || phase == .mainMenu || phase == .charSelect {
                 bridge.engine?.audio.unlock()
-                bridge.engine?.audio.playMenuTheme()
             }
         }
     }
@@ -1124,12 +1125,14 @@ struct ContentView: View {
     }
 }
 
-// MARK: - Endless char-select loops (one active, muted; pause on leave)
+// MARK: - Menu / char-select loops (one visible; JJ's loop is also the menu soundtrack)
 
 /// Four loop layers (JJ video / JJ Endless frames / Andrew / Han). Players / animators are
-/// created lazily. Only the active id plays; the others pause after a 160ms crossfade.
-/// Never three simultaneously playing AVPlayers. Image sequences use UIImageView.animationImages
-/// (no second CADisplayLink).
+/// created lazily. Only the active id is visible; hover loops pause after a 160ms crossfade.
+/// The JJ slot (`menu-select-loop.mp4`) carries the menu's audio track, so it keeps playing —
+/// hidden — while Andrew / Han are focused and only stops when the stack is dismantled (with a
+/// short fade). At most two AVPlayers play at once (JJ + one hover loop); the Andrew / Han mp4s
+/// have no audio. Image sequences use UIImageView.animationImages (no second CADisplayLink).
 private final class CharSelectLoopStackView: UIView {
     private struct Slot {
         let id: String
@@ -1137,6 +1140,8 @@ private final class CharSelectLoopStackView: UIView {
         let resource: String?
         let frameAssets: [String]?
         let poster: String?
+        /// True for the slot whose mp4 audio track is the menu soundtrack.
+        let soundtrack: Bool
         let layer: AVPlayerLayer
         let posterView: UIImageView
         let animView: UIImageView
@@ -1149,6 +1154,14 @@ private final class CharSelectLoopStackView: UIView {
     private(set) var activeId: String = "jj"
     private static let crossfade: TimeInterval = 0.16
     private static let jjFrameDuration: TimeInterval = 0.22
+    /// Soundtrack fade when the menu goes away (matches the old TDM fade).
+    private static let soundtrackFade: TimeInterval = 0.25
+
+    /// Source of truth for SOUND / MUSIC. The soundtrack player is an AVPlayer, not a node on the
+    /// engine's mixer, so it reads `menuLoopGain` and follows `GameAudio.gainDidChange`.
+    weak var audio: GameAudio? {
+        didSet { applyGain() }
+    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -1156,17 +1169,17 @@ private final class CharSelectLoopStackView: UIView {
         backgroundColor = .black
         clipsToBounds = true
         // Poster = frame 0 of that fighter's loop (also the Endless select card art), so the
-        // poster → video / frame handoff is seamless. Main-menu JJ keeps menu-select-loop;
-        // Endless JJ uses a distinct guitar sit-loop (jj-endless).
-        let specs: [(String, String?, String?, [String]?)] = [
-            ("jj", "menu-select-loop", "menu_select_poster", nil),
+        // poster → video / frame handoff is seamless. Main-menu JJ is menu-select-loop (with its
+        // own audio track); Endless JJ uses a distinct guitar sit-loop (jj-endless).
+        let specs: [(String, String?, String?, [String]?, Bool)] = [
+            ("jj", "menu-select-loop", "menu_select_poster", nil, true),
             ("jj-endless", nil, "select_jj", [
                 "jj_endless_loop_0", "jj_endless_loop_1", "jj_endless_loop_2", "jj_endless_loop_3"
-            ]),
-            ("andrew", "andrew-hover", "select_andrew", nil),
-            ("han", "han-hover", "select_han", nil),
+            ], false),
+            ("andrew", "andrew-hover", "select_andrew", nil, false),
+            ("han", "han-hover", "select_han", nil, false),
         ]
-        for (id, res, poster, frames) in specs {
+        for (id, res, poster, frames, soundtrack) in specs {
             let posterView = UIImageView()
             posterView.contentMode = .scaleAspectFill
             posterView.clipsToBounds = true
@@ -1188,7 +1201,7 @@ private final class CharSelectLoopStackView: UIView {
             self.layer.addSublayer(layer)
 
             slots.append(Slot(
-                id: id, resource: res, frameAssets: frames, poster: poster,
+                id: id, resource: res, frameAssets: frames, poster: poster, soundtrack: soundtrack,
                 layer: layer, posterView: posterView, animView: animView,
                 queue: nil, looper: nil, framesReady: false
             ))
@@ -1203,6 +1216,12 @@ private final class CharSelectLoopStackView: UIView {
             self,
             selector: #selector(appForeground),
             name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(gainChanged),
+            name: GameAudio.gainDidChange,
             object: nil
         )
     }
@@ -1227,10 +1246,15 @@ private final class CharSelectLoopStackView: UIView {
     }
 
     /// Focus change: 160ms crossfade, new player starts now, old one pauses after the fade.
+    /// The soundtrack slot is exempt from the pause — it plays (visible or not) for the whole
+    /// life of the stack.
     func setActive(_ id: String, animated: Bool = true) {
         let previous = activeId
         activeId = id
         ensureMedia(for: id)
+        for s in slots where s.soundtrack && s.id != id {
+            ensureMedia(for: s.id)
+        }
         let dur = animated ? Self.crossfade : 0
 
         CATransaction.begin()
@@ -1252,7 +1276,7 @@ private final class CharSelectLoopStackView: UIView {
         }
         CATransaction.commit()
 
-        for i in slots.indices where slots[i].id == id {
+        for i in slots.indices where slots[i].id == id || slots[i].soundtrack {
             if slots[i].frameAssets != nil {
                 slots[i].animView.startAnimating()
             } else {
@@ -1262,7 +1286,8 @@ private final class CharSelectLoopStackView: UIView {
         if previous != id || dur <= 0 {
             let pauseOthers = { [weak self] in
                 guard let self else { return }
-                for i in self.slots.indices where self.slots[i].id != self.activeId {
+                for i in self.slots.indices
+                where self.slots[i].id != self.activeId && !self.slots[i].soundtrack {
                     self.slots[i].queue?.pause()
                     self.slots[i].animView.stopAnimating()
                 }
@@ -1291,7 +1316,53 @@ private final class CharSelectLoopStackView: UIView {
         }
     }
 
-    /// Lazily build one muted looping player or load the image-sequence frames.
+    /// Leaving the menu: ramp the soundtrack down over `soundtrackFade`, then stop everything.
+    /// The soundtrack player is handed to the ramp closure first so `deinit → stopAll` (which
+    /// may run as soon as SwiftUI drops the view) cannot cut it mid-fade.
+    func fadeOutAndStop() {
+        for i in slots.indices where slots[i].soundtrack {
+            guard let queue = slots[i].queue else { continue }
+            let looper = slots[i].looper
+            slots[i].queue = nil
+            slots[i].looper = nil
+            slots[i].layer.player = nil
+            let steps = 5
+            let startVol = queue.volume
+            for k in 1...steps {
+                let delay = Self.soundtrackFade * Double(k) / Double(steps)
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                    if k < steps {
+                        queue.volume = startVol * Float(steps - k) / Float(steps)
+                    } else {
+                        queue.pause()
+                        _ = looper   // keep the looper alive until the player is parked
+                    }
+                }
+            }
+        }
+        stopAll()
+    }
+
+    /// Current soundtrack volume: SOUND off → 0, else MUSIC-scaled. Falls back to the persisted
+    /// mute flag before the engine exists.
+    private var soundtrackGain: Float {
+        if let audio { return audio.menuLoopGain }
+        return UserDefaults.standard.bool(forKey: GameAudio.Keys.muted) ? 0 : 1
+    }
+
+    func applyGain() {
+        let gain = soundtrackGain
+        for s in slots where s.soundtrack {
+            s.queue?.volume = gain
+        }
+    }
+
+    @objc private func gainChanged() {
+        applyGain()
+    }
+
+    /// Lazily build one looping player (muted unless it is the soundtrack slot) or load the
+    /// image-sequence frames.
     private func ensureMedia(for id: String) {
         guard let i = slots.firstIndex(where: { $0.id == id }) else { return }
         if let frames = slots[i].frameAssets {
@@ -1317,7 +1388,12 @@ private final class CharSelectLoopStackView: UIView {
         }
         let item = AVPlayerItem(url: url)
         let queue = AVQueuePlayer()
-        queue.isMuted = true
+        if slots[i].soundtrack {
+            queue.isMuted = false
+            queue.volume = soundtrackGain
+        } else {
+            queue.isMuted = true
+        }
         let looper = AVPlayerLooper(player: queue, templateItem: item)
         slots[i].queue = queue
         slots[i].looper = looper
@@ -1338,14 +1414,21 @@ private final class CharSelectLoopStackView: UIView {
 
 private struct CharSelectLoopStack: UIViewRepresentable {
     var activeId: String
+    /// Engine audio (SOUND / MUSIC source for the soundtrack slot). Optional: the stack only
+    /// mounts after assets load, by which point the engine exists.
+    var audio: GameAudio?
 
     func makeUIView(context: Context) -> CharSelectLoopStackView {
         let v = CharSelectLoopStackView()
+        v.audio = audio
         v.setActive(activeId, animated: false)
         return v
     }
 
     func updateUIView(_ uiView: CharSelectLoopStackView, context: Context) {
+        if uiView.audio == nil, let audio {
+            uiView.audio = audio
+        }
         // Only on a real focus change — SwiftUI re-runs this on every body evaluation.
         if uiView.activeId != activeId {
             uiView.setActive(activeId)
@@ -1353,7 +1436,7 @@ private struct CharSelectLoopStack: UIViewRepresentable {
     }
 
     static func dismantleUIView(_ uiView: CharSelectLoopStackView, coordinator: ()) {
-        uiView.stopAll()
+        uiView.fadeOutAndStop()
     }
 }
 
