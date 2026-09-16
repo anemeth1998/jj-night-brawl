@@ -483,6 +483,24 @@ final class GameCanvasBridge: ObservableObject {
         return true
     }
 
+    /// Endless only — leave the run for the main menu (pause, mid-fight, or end card).
+    @discardableResult
+    func quitEndless() -> Bool {
+        guard let canvas else { return false }
+        guard canvas.engine.state.playMode == .endless else { return false }
+        switch canvas.engine.state.phase {
+        case .playing, .paused, .gameover, .victory, .waveClear, .stageClear:
+            break
+        default:
+            return false
+        }
+        canvas.engine.audio.unlock()
+        canvas.engine.quitEndless()
+        canvas.engine.clearTouch()
+        _ = canvas.becomeFirstResponder()
+        return true
+    }
+
     /// RETRY / PLAY AGAIN only. Title, menu and select never reach this.
     @discardableResult
     func startGame() -> Bool {
@@ -888,6 +906,8 @@ struct ContentView: View {
 
     // MARK: Combat chrome
 
+    private var isEndlessRun: Bool { bridge.engine?.state.playMode == .endless }
+
     private var topBar: some View {
         // Keep chips on the RIGHT so they do not cover the canvas-drawn HEALTH / RIFF meters (left).
         HStack(spacing: 10) {
@@ -901,6 +921,19 @@ struct ContentView: View {
                     bridge.engine?.audio.unlock()
                     bridge.engine?.togglePause()
                 }
+                // Endless has no campaign Continue — Quit is how you leave a run.
+                if phase == .paused && isEndlessRun {
+                    TouchChip(
+                        title: "QUIT",
+                        color: MenuTheme.pink.opacity(0.85)
+                    ) {
+                        sfx.play(.back)
+                        FeelHaptics.light()
+                        if bridge.quitEndless() {
+                            phase = .mainMenu
+                        }
+                    }
+                }
             }
             SoundChip(muted: muted, sfx: sfx) {
                 muted = sfx.toggleMute(current: muted)
@@ -910,20 +943,37 @@ struct ContentView: View {
         .padding(.top, 8)
     }
 
-    /// RETRY / PLAY AGAIN — the only way back into a run from an end-state card.
+    /// RETRY / PLAY AGAIN — plus QUIT on Endless so a dead run is not a trap.
     private var endStateButton: some View {
-        MenuCapsule(
-            title: phase == .victory ? "PLAY AGAIN" : "RETRY",
-            style: .primary,
-            minHeight: 52,
-            sfx: sfx,
-            successCue: .confirm,
-            successHaptic: .medium,
-            accessibilityLabel: phase == .victory ? "Play again" : "Retry"
-        ) {
-            if bridge.startGame() {
-                // Immediate UI feedback — don't wait for the next display-link tick.
-                phase = .playing
+        VStack(spacing: 10) {
+            MenuCapsule(
+                title: phase == .victory ? "PLAY AGAIN" : "RETRY",
+                style: .primary,
+                minHeight: 52,
+                sfx: sfx,
+                successCue: .confirm,
+                successHaptic: .medium,
+                accessibilityLabel: phase == .victory ? "Play again" : "Retry"
+            ) {
+                if bridge.startGame() {
+                    // Immediate UI feedback — don't wait for the next display-link tick.
+                    phase = .playing
+                }
+            }
+            if isEndlessRun {
+                MenuCapsule(
+                    title: "QUIT",
+                    style: .ghost,
+                    minHeight: 48,
+                    sfx: sfx,
+                    successCue: .back,
+                    successHaptic: .light,
+                    accessibilityLabel: "Quit endless and return to main menu"
+                ) {
+                    if bridge.quitEndless() {
+                        phase = .mainMenu
+                    }
+                }
             }
         }
         .frame(maxWidth: 260)

@@ -1,0 +1,23 @@
+{
+  "mode": "kick",
+  "variant": "snap",
+  "character": "jj",
+  "rows": 2,
+  "cols": 2,
+  "cell_size": 128,
+  "frame_count": 4,
+  "duration": 0.44,
+  "active": [
+    0.14,
+    0.34
+  ],
+  "fps": 9.09,
+  "facing": "right",
+  "frame_labels": [
+    "snap-chamber",
+    "snap-mid",
+    "snap-extend",
+    "snap-recover"
+  ],
+  "notes": "Existing production jj_kick 2x2. GameAssets already must(\"jj_kick\", 2, 2). Do not replace these 4 cells. Hit window t=0.14-0.34 lands on late f0 + early f1."
+}

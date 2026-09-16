@@ -15,6 +15,8 @@ final class SpriteSheet: @unchecked Sendable {
 
     private let directFrames: [UIImage]?
     private var frameCache: [Int: UIImage] = [:]
+    /// White silhouettes (sprite alpha only) for the hit flash — built lazily on first hit.
+    private var flashCache: [Int: UIImage] = [:]
     private let cacheLock = NSLock()
 
     init(image: UIImage, cols: Int, rows: Int) {
@@ -111,6 +113,56 @@ final class SpriteSheet: @unchecked Sendable {
         UIGraphicsPopContext()
         ctx.restoreGState()
     }
+
+    /// White silhouette of `frame`: the frame's own alpha, filled white via `.sourceIn` in a
+    /// fresh transparent bitmap. A `.sourceAtop` fill on the live canvas is *not* equivalent —
+    /// the stage underneath is opaque, so "atop" covers the whole sprite rect (the white box bug).
+    private func flashImage(_ frame: Int) -> UIImage? {
+        let total = max(1, frameCount)
+        let f = ((frame % total) + total) % total
+        cacheLock.lock()
+        if let cached = flashCache[f] {
+            cacheLock.unlock()
+            return cached
+        }
+        cacheLock.unlock()
+        guard let piece = frameImage(f), let cg = piece.cgImage else { return nil }
+        let w = cg.width, h = cg.height
+        guard w > 0, h > 0 else { return nil }
+        let cs = CGColorSpaceCreateDeviceRGB()
+        guard let bmp = CGContext(
+            data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0,
+            space: cs, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return nil }
+        let rect = CGRect(x: 0, y: 0, width: w, height: h)
+        bmp.draw(cg, in: rect)
+        bmp.setBlendMode(.sourceIn)
+        bmp.setFillColor(UIColor.white.cgColor)
+        bmp.fill(rect)
+        guard let out = bmp.makeImage() else { return nil }
+        let img = UIImage(cgImage: out, scale: piece.scale, orientation: .up)
+        cacheLock.lock()
+        flashCache[f] = img
+        cacheLock.unlock()
+        return img
+    }
+
+    /// Hit-flash overlay: tints only the sprite's pixels, never its bounding box.
+    func drawFlash(in ctx: CGContext, frame: Int, dest: CGRect, flipX: Bool, alpha: CGFloat) {
+        guard alpha > 0.01, dest.width > 0.5, dest.height > 0.5 else { return }
+        guard let piece = flashImage(frame) else { return }
+        ctx.saveGState()
+        ctx.interpolationQuality = .none
+        if flipX {
+            ctx.translateBy(x: dest.midX, y: dest.midY)
+            ctx.scaleBy(x: -1, y: 1)
+            ctx.translateBy(x: -dest.midX, y: -dest.midY)
+        }
+        UIGraphicsPushContext(ctx)
+        piece.draw(in: dest, blendMode: .normal, alpha: min(1, alpha))
+        UIGraphicsPopContext()
+        ctx.restoreGState()
+    }
 }
 
 final class GameAssets: @unchecked Sendable {
@@ -150,6 +202,11 @@ final class GameAssets: @unchecked Sendable {
     private(set) var hanSpecial: SpriteSheet?
 
     private var enemySheets: [String: SpriteSheet] = [:]
+    /// Moveset sheets keyed `<fighter>_<sheetKey>` (jj_punch1, han_kick2, andrew_knockdown …).
+    /// All optional: `sheetForPlayer` degrades to the base attack / kick / hurt atlas.
+    private var moveSheets: [String: SpriteSheet] = [:]
+    /// Suffixes probed for every fighter at load — matches tools/pack_sheet.py `--move` names.
+    static let moveSheetKeys = ["punch1", "punch2", "punch3", "kick1", "kick2", "airkick", "dash", "knockdown"]
     private(set) var sky: UIImage?
     private(set) var farBg: UIImage?
     private(set) var midBg: UIImage?
@@ -184,6 +241,20 @@ final class GameAssets: @unchecked Sendable {
                     enemies["\(t)_\(a)"] = s
                 }
             }
+            // Reaction sheets from the clip pipeline (any square-cell grid). Missing → idle.
+            for a in ["hurt", "knockdown", "dead"] {
+                if let s = optAuto("en_\(t)_\(a)") {
+                    enemies["\(t)_\(a)"] = s
+                }
+            }
+        }
+        var moves: [String: SpriteSheet] = [:]
+        for who in ["jj", "andrew", "han"] {
+            for key in Self.moveSheetKeys {
+                if let s = optAuto("\(who)_\(key)") {
+                    moves["\(who)_\(key)"] = s
+                }
+            }
         }
         let impactSheet = opt("fx_impact", 2, 2, stripChroma: stripChroma)
         // Do NOT decode map_* at title — 1536×864 ×3 (+ stage packs) jetsam'd the sim ~5s after title.
@@ -194,17 +265,18 @@ final class GameAssets: @unchecked Sendable {
         let titleImg = UIImage(named: "title_screen")
         let selectAndrewImg = UIImage(named: "select_andrew")
         let selectHanImg = UIImage(named: "select_han")
-        // Andrew/Han: idle is 128² (1×1), walk 256² (2×2). Missing → nil, never force-unwrap.
-        let andrewIdleSheet = opt("andrew_idle", 1, 1, stripChroma: stripChroma)
-        let andrewWalkSheet = opt("andrew_walk", 2, 2, stripChroma: stripChroma)
-        let hanIdleSheet = opt("han_idle", 1, 1, stripChroma: stripChroma)
-        let hanWalkSheet = opt("han_walk", 2, 2, stripChroma: stripChroma)
-        let andrewAttackSheet = opt("andrew_attack", 1, 1, stripChroma: stripChroma)
-        let andrewKickSheet = opt("andrew_kick", 1, 1, stripChroma: stripChroma)
-        let andrewHurtSheet = opt("andrew_hurt", 1, 1, stripChroma: stripChroma)
-        let hanAttackSheet = opt("han_attack", 1, 1, stripChroma: stripChroma)
-        let hanKickSheet = opt("han_kick", 1, 1, stripChroma: stripChroma)
-        let hanHurtSheet = opt("han_hurt", 1, 1, stripChroma: stripChroma)
+        // Andrew/Han: grid inferred from the PNG (1×1 128² today; 2×2 / 4×2 once the clip
+        // pipeline re-packs them). Missing → nil, never force-unwrap.
+        let andrewIdleSheet = optAuto("andrew_idle")
+        let andrewWalkSheet = optAuto("andrew_walk")
+        let hanIdleSheet = optAuto("han_idle")
+        let hanWalkSheet = optAuto("han_walk")
+        let andrewAttackSheet = optAuto("andrew_attack")
+        let andrewKickSheet = optAuto("andrew_kick")
+        let andrewHurtSheet = optAuto("andrew_hurt")
+        let hanAttackSheet = optAuto("han_attack")
+        let hanKickSheet = optAuto("han_kick")
+        let hanHurtSheet = optAuto("han_hurt")
         let andrewJumpSheet = opt("andrew_jump", 2, 2, stripChroma: stripChroma)
         let andrewSpecialSheet = opt("andrew_special", 2, 2, stripChroma: stripChroma)
         let hanJumpSheet = opt("han_jump", 2, 2, stripChroma: stripChroma)
@@ -245,6 +317,7 @@ final class GameAssets: @unchecked Sendable {
             self.hanJump = hanJumpSheet
             self.hanSpecial = hanSpecialSheet
             self.enemySheets = enemies
+            self.moveSheets = moves
             self.impact = impactSheet
             self.sky = skyImg
             self.farBg = farImg
@@ -645,13 +718,13 @@ final class GameAssets: @unchecked Sendable {
     }
 
 
-    /// Parallax plates for the current campaign stage index (Act I 0..<4).
+    /// Parallax plates for the current campaign stage index (Act I 0..<5, i5 = water tower).
     /// Keeps only the requested stage resident — drops other stage packs to avoid jetsam.
     func maps(forStageIndex index: Int) -> (sky: UIImage?, far: UIImage?, mid: UIImage?) {
         if let hit = stageMaps[index] { return hit }
         let i = index + 1
         let pack: (sky: UIImage?, far: UIImage?, mid: UIImage?)
-        if (1...4).contains(i) {
+        if (1...5).contains(i) {
             pack = (
                 UIImage(named: "map_i\(i)_sky") ?? UIImage(named: "map_sky"),
                 UIImage(named: "map_i\(i)_far") ?? UIImage(named: "map_far"),
@@ -669,9 +742,24 @@ final class GameAssets: @unchecked Sendable {
     }
 
 
-    func sheetForPlayer(anim: AnimName, attackKind: AttackKind?, fighter: String = "jj") -> SpriteSheet {
+    /// Moveset sheet for a fighter (`jj_punch2`, `han_airkick` …) if the pipeline has packed it.
+    func moveSheet(fighter: String, key: String) -> SpriteSheet? {
+        moveSheets["\(fighter.lowercased())_\(key)"]
+    }
+
+    /// Sheet for a fighter's current pose. `variant` selects the chain step / situational move
+    /// (see MoveTable); a missing variant sheet degrades to the base attack / kick atlas, then idle,
+    /// so a fighter never swaps to another fighter's art mid-move.
+    func sheetForPlayer(anim: AnimName, attackKind: AttackKind?, variant: Int = 0, fighter: String = "jj") -> SpriteSheet {
         let fb = fallbackSheet
         let id = fighter.lowercased()
+
+        // Variant sheet first — same lookup for every fighter.
+        func variantSheet() -> SpriteSheet? {
+            guard anim == .attack, let attackKind else { return nil }
+            let key = MoveTable.base(kind: attackKind, variant: variant).sheetKey
+            return moveSheet(fighter: id, key: key)
+        }
 
         // Endless fighters: every anim resolves within that fighter's own sheets so a missing
         // atlas degrades to their idle pose, never to a JJ sprite swap mid-move.
@@ -679,14 +767,18 @@ final class GameAssets: @unchecked Sendable {
             let isAndrew = id == "andrew"
             let idle = (isAndrew ? andrewIdle : hanIdle) ?? fb
             let walk = (isAndrew ? andrewWalk : hanWalk) ?? idle
+            let hurt = (isAndrew ? andrewHurt : hanHurt) ?? idle
             switch anim {
             case .attack:
+                if let v = variantSheet() { return v }
                 if attackKind == .special { return (isAndrew ? andrewSpecial : hanSpecial) ?? idle }
                 if attackKind == .kick { return (isAndrew ? andrewKick : hanKick) ?? idle }
                 // Gun reuses punch pose + drawn pistol overlay
                 return (isAndrew ? andrewAttack : hanAttack) ?? idle
-            case .hurt, .dead:
-                return (isAndrew ? andrewHurt : hanHurt) ?? idle
+            case .hurt:
+                return hurt
+            case .knockdown, .dead:
+                return moveSheet(fighter: id, key: "knockdown") ?? hurt
             case .jump:
                 return (isAndrew ? andrewJump : hanJump) ?? idle
             case .walk, .run:
@@ -698,11 +790,13 @@ final class GameAssets: @unchecked Sendable {
 
         switch anim {
         case .attack:
+            if let v = variantSheet() { return v }
             if attackKind == .special { return jjSpecial ?? jjAttack ?? fb }
             if attackKind == .kick { return jjKick ?? jjAttack ?? fb }
             // Gun reuses punch pose + drawn pistol overlay
             return jjAttack ?? fb
-        case .hurt, .dead: return jjHurt ?? fb
+        case .hurt: return jjHurt ?? fb
+        case .knockdown, .dead: return moveSheet(fighter: "jj", key: "knockdown") ?? jjHurt ?? fb
         case .jump: return jjJump ?? fb
         case .smoke: return jjSmoke ?? fb
         case .victory: return jjVictory ?? fb
@@ -713,21 +807,43 @@ final class GameAssets: @unchecked Sendable {
     }
 
     /// Enemy atlases are pre-keyed transparent PNGs (runtime chroma is off for perf), so a
-    /// loaded sheet never carries a solid pink cell. A missing sheet degrades to that type's
+    /// loaded sheet never carries a solid pink cell. Reactions: hurt → `<t>_hurt`, knockdown /
+    /// death → `<t>_knockdown` (or `_dead`) → hurt. A missing sheet degrades to that type's
     /// idle, then to any other enemy idle — never to a JJ sheet or a placeholder fill.
     func sheetForEnemy(type: EnemyType?, anim: AnimName) -> SpriteSheet {
         let t = type?.rawValue ?? "biz"
-        let key: String
+        let candidates: [String]
         switch anim {
-        case .walk: key = "\(t)_walk"
-        case .attack: key = "\(t)_attack"
-        default: key = "\(t)_idle"
+        case .walk, .run: candidates = ["\(t)_walk"]
+        case .attack: candidates = ["\(t)_attack"]
+        case .hurt: candidates = ["\(t)_hurt"]
+        case .knockdown, .dead: candidates = ["\(t)_knockdown", "\(t)_dead", "\(t)_hurt"]
+        case .idle, .jump, .smoke, .victory: candidates = []
         }
-        if let s = enemySheets[key] ?? enemySheets["\(t)_idle"] { return s }
+        for key in candidates {
+            if let s = enemySheets[key] { return s }
+        }
+        if let s = enemySheets["\(t)_idle"] { return s }
         for other in ["biz", "maga", "gothm", "gothf"] where other != t {
             if let s = enemySheets["\(other)_idle"] { return s }
         }
         return fallbackSheet
+    }
+
+    /// Optional sheet whose grid is inferred from the PNG: square cells, trying 128 → 160 → 192
+    /// → 256 px. Lets `tools/pack_sheet.py` output drop in with no code change.
+    private func optAuto(_ name: String) -> SpriteSheet? {
+        guard let img = UIImage(named: name), let cg = img.cgImage else { return nil }
+        let w = cg.width, h = cg.height
+        guard w > 0, h > 0 else { return nil }
+        for cell in [128, 160, 192, 256] where w % cell == 0 && h % cell == 0 {
+            let cols = w / cell, rows = h / cell
+            if cols >= 1, rows >= 1, cols <= 8, rows <= 4 {
+                return SpriteSheet(image: img, cols: cols, rows: rows)
+            }
+        }
+        // Not a cell multiple — treat as a single frame rather than mis-slicing.
+        return SpriteSheet(image: img, cols: 1, rows: 1)
     }
 
     private func must(_ name: String, _ c: Int, _ r: Int, stripChroma: Bool = false) -> SpriteSheet? {

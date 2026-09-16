@@ -140,7 +140,7 @@ enum GameRenderer {
     private static func drawFighter(ctx: CGContext, f: Fighter, assets: GameAssets, camX: CGFloat, playerId: String = "jj") {
         let sheet: SpriteSheet
         if f.kind == .player {
-            sheet = assets.sheetForPlayer(anim: f.anim, attackKind: f.attackKind, fighter: playerId)
+            sheet = assets.sheetForPlayer(anim: f.anim, attackKind: f.attackKind, variant: f.attackVariant, fighter: playerId)
         } else {
             sheet = assets.sheetForEnemy(type: f.enemyType, anim: f.anim)
         }
@@ -192,14 +192,11 @@ enum GameRenderer {
         let flip = f.facing < 0
         let dest = CGRect(x: dx, y: dy, width: drawW, height: drawH)
         sheet.draw(in: ctx, frame: f.animFrame, dest: dest, flipX: flip)
-        // Hit flash: tint only sprite coverage (sourceAtop), never a solid white box.
+        // Hit flash: a cached white silhouette of this exact frame. (A sourceAtop fill painted
+        // the whole sprite rect because the stage under it is opaque — the white box bug.)
         if f.flash > 0 {
-            ctx.saveGState()
             let a = min(1, f.flash / 0.12) * 0.7
-            ctx.setBlendMode(.sourceAtop)
-            ctx.setFillColor(UIColor.white.withAlphaComponent(a).cgColor)
-            ctx.fill(dest)
-            ctx.restoreGState()
+            sheet.drawFlash(in: ctx, frame: f.animFrame, dest: dest, flipX: flip, alpha: a)
         }
         ctx.setAlpha(1)
 

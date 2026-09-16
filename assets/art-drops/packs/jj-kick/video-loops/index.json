@@ -1,0 +1,45 @@
+{
+  "character": "jj",
+  "cell": 128,
+  "engine": {
+    "imageset": "jj_kick.imageset/img.png",
+    "load": "must(\"jj_kick\", 2, 2)",
+    "replace": false,
+    "frames": [
+      "frames-v1/jj_kick_front_00.png",
+      "frames-v1/jj_kick_front_01.png",
+      "frames-v1/jj_kick_front_02.png",
+      "frames-v1/jj_kick_front_03.png"
+    ]
+  },
+  "loops": {
+    "snap": {
+      "frames": 24,
+      "source": "source-videos/jj_front_snap.mp4",
+      "id": "27F1j"
+    },
+    "roundhouse": {
+      "frames": 24,
+      "source": "source-videos/jj_roundhouse.mp4",
+      "id": "MbW5J"
+    },
+    "jump": {
+      "frames": 24,
+      "source": "source-videos/jj_jump_kick.mp4",
+      "id": "muUsz"
+    }
+  },
+  "stills": {
+    "snap/02b_mid.png": "hires snap mid extra",
+    "jump/01_coil.png": "jump coil",
+    "jump/00_crouch.png": "jump crouch",
+    "jump/01b_crouch.png": "jump crouch alt",
+    "jump/04_contact.png": "jump flying contact",
+    "sweep/03_contact.png": "low sweep contact",
+    "axe/03_contact.png": "axe/high-round contact",
+    "side/03_contact.png": "side thrust contact",
+    "side/03b_guard.png": "side thrust guard alt",
+    "drop/04_contact.png": "dropkick contact"
+  },
+  "notes": "generated-stills/ raw IDs are reference only; some flood-keys fragmented. Use frames/* copies from processed/hires named 128s."
+}

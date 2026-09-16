@@ -1,0 +1,21 @@
+{
+  "mode": "kick",
+  "variant": "snap",
+  "rows": 2,
+  "cols": 2,
+  "cell_size": 128,
+  "frame_count": 4,
+  "duration": 0.44,
+  "active": [
+    0.14,
+    0.34
+  ],
+  "fps": 9.09,
+  "frame_labels": [
+    "snap-chamber",
+    "snap-contact",
+    "snap-fold",
+    "snap-recover"
+  ],
+  "notes": "f1 is the uploaded / existing andrew_kick PNG. Engine currently hardcodes 4 frames so this 2x2 works today after GameAssets cols/rows bump 1x1 -> 2x2."
+}

@@ -8,7 +8,9 @@ final class GameEngine {
 
     private let laneTop: CGFloat = 310
     private let laneBottom: CGFloat = 500
-    private let stageWidth: CGFloat = 2800
+    /// Fallback only — each StageDef carries its own `width`, copied into `state.stageWidth`.
+    private let defaultStageWidth: CGFloat = 2800
+    private var stageWidth: CGFloat { state.stageWidth }
 
     private let playerSpeed: CGFloat = 210
     private let playerSprintMul: CGFloat = 1.55
@@ -32,6 +34,9 @@ final class GameEngine {
     /// Frames in the selected fighter's riff sheet (JJ 8-frame 4×2, Andrew / Han 4-frame 2×2).
     /// Injected by the view each tick so the special anim spreads across the whole sheet.
     var playerSpecialFrames: Int = 4
+    /// Frames in the sheet resolved for the player's *current* melee move (variant sheets from
+    /// the clip pipeline may be 8–12 frames; the legacy atlases are 4). Injected like the above.
+    var playerAttackFrames: Int = 4
     /// Hold a ~0.5s gait so extra in-betweens smooth the sprint instead of slowing it.
     private var playerRunFps: CGFloat { max(12, CGFloat(max(1, playerRunFrames)) * 2) }
     private let enemyWalkFps: CGFloat = 8
@@ -39,13 +44,8 @@ final class GameEngine {
     private let playerIdleHolds: [CGFloat] = [0.40, 0.16, 0.18, 0.14]
     private let enemyIdleHolds: [CGFloat] = [0.28, 0.14, 0.16, 0.14]
 
-    private let attackDuration: [AttackKind: CGFloat] = [
-        .punch: 0.30, .kick: 0.44, .special: 0.95, .gun: 0.42
-    ]
-    private let attackActive: [AttackKind: (CGFloat, CGFloat)] = [
-        .punch: (0.08, 0.22), .kick: (0.14, 0.34), .special: (0.18, 0.82), .gun: (0.08, 0.22)
-    ]
-    private let gunDamage: CGFloat = 28
+    // Attack timings / damage / hitboxes live in MoveTable (GameTypes.swift) — one MoveDef per
+    // chain step so jab, cross, hook … each read differently.
     private let gunBulletSpeed: CGFloat = 720
     private let gunBulletLife: CGFloat = 0.55
     private let gangViolenceLine = "Counting or not counting gang violence?"
@@ -53,10 +53,10 @@ final class GameEngine {
 
     private let riffRadiusMin: CGFloat = 90
     private let riffRadiusMax: CGFloat = 210
-    private let riffDamage: CGFloat = 22
-    private let riffKnock: CGFloat = 340
     private let hurtDuration: CGFloat = 0.35
     private let invulnAfterHit: CGFloat = 0.42
+    /// Combo milestones that play a sting (and the label goes gold from here).
+    private let comboMilestones: Set<Int> = [5, 10, 15, 20, 30]
     private let comboWindow: CGFloat = 0.85
     private let speechBubbleLife: CGFloat = 1.15
     private let waveClearDuration: CGFloat = 3.2
@@ -122,7 +122,7 @@ final class GameEngine {
         nextId = 1
         state = GameState(player: makePlayer())
         state.phase = .title
-        state.stageWidth = stageWidth
+        state.stageWidth = defaultStageWidth
         flushInput()
     }
 
@@ -177,18 +177,56 @@ final class GameEngine {
         state.selectedFighter = pick.isEmpty ? "jj" : pick
         state.playMode = mode
         state.phase = .playing
-        state.stageWidth = stageWidth
+        state.stageWidth = defaultStageWidth
         // Bradford: never inherit title/select stick/queue into Act I.
         flushInput()
         // No uiConfirm here: the STORY / START BRAWL / RETRY control already played it.
         // waveStart stays inside beginStage → beginWave.
-        beginStage(0)
+        if mode == .endless {
+            // Endless: shuffled tour of every street, gun from the start, looping forever.
+            state.endlessLoop = 0
+            state.endlessOrder = Self.shuffledEndlessOrder()
+            state.endlessCursor = 0
+            state.hasGun = true
+            state.unlockFlags.insert(.hasGun)
+            beginStage(state.endlessOrder.first ?? 0)
+        } else {
+            beginStage(0)
+        }
+    }
+
+    /// Endless order: every stage once per loop, shuffled, finale always last so each lap
+    /// ends on the roof.
+    private static func shuffledEndlessOrder() -> [Int] {
+        var body: [Int] = []
+        var finale: [Int] = []
+        for (i, s) in CampaignData.stages.enumerated() {
+            if s.isFinale { finale.append(i) } else { body.append(i) }
+        }
+        return body.shuffled() + finale
     }
 
 
     /// Char select / sub-screens → main menu.
     func returnToMainMenu() {
         flushInput()
+        state.phase = .mainMenu
+        state.message = "MAIN MENU"
+        state.messageSubtitle = "Story Mode · Endless"
+        state.messageTimer = 1.2
+    }
+
+    /// Leave an Endless run (pause / mid-fight / end card) → main menu.
+    /// Does not exit the app. Fighter pick is kept for the next Endless select.
+    func quitEndless() {
+        guard state.playMode == .endless else { return }
+        flushInput()
+        if state.phase == .paused {
+            audio.resume()
+        }
+        let pick = state.selectedFighter
+        state.playMode = .story
+        state.selectedFighter = pick.isEmpty ? "jj" : pick
         state.phase = .mainMenu
         state.message = "MAIN MENU"
         state.messageSubtitle = "Story Mode · Endless"
@@ -426,21 +464,38 @@ final class GameEngine {
 
     private func beginStage(_ index: Int) {
         guard let stage = CampaignData.stage(at: index) else {
-            state.phase = .victory
-            beginSmokeBreak("STREET CLEARED", duration: 99)
-            state.player.anim = .victory
-            state.player.animTime = 0
-            state.player.animFrame = 0
-            audio.victory()
+            finishCampaign()
             return
         }
         state.stageIndex = index
         state.actIndex = stage.act
-        state.stageName = stage.name
+        state.stageName = stage.displayTitle
+        state.stageWidth = stage.width
         state.maxWaves = stage.waves.count
         state.zineText = ""
+        // New street: walk in from the left, camera parked at the start.
+        state.player.x = 220
+        state.player.y = 400
+        state.player.z = 0
+        state.player.zVel = 0
+        state.player.vx = 0
+        state.player.vy = 0
+        state.player.facing = 1
+        state.cameraX = 0
+        state.particles = []
+        state.floats = []
         flushInput()
         beginWave(1)
+    }
+
+    /// Story only — Endless never runs out of streets.
+    private func finishCampaign() {
+        state.phase = .victory
+        beginSmokeBreak("STREET CLEARED", duration: 99)
+        state.player.anim = .victory
+        state.player.animTime = 0
+        state.player.animFrame = 0
+        audio.victory()
     }
 
     private func beginWave(_ wave: Int) {
@@ -450,15 +505,31 @@ final class GameEngine {
         state.wave = wave
         state.enemies = []
         state.bullets = []
-        state.pendingSpawns = def.spawnList()
-        let count = def.totalCount
+        var spawns = def.spawnList()
+        var hpScale = def.hpScale
+        var telegraphMul = def.telegraphMul
+        if state.playMode == .endless, state.endlessLoop > 0 {
+            // Each lap: +15% HP, 8% shorter wind-ups, one more body per wave (capped at +3).
+            let loop = CGFloat(state.endlessLoop)
+            hpScale *= pow(1.15, loop)
+            telegraphMul *= pow(0.92, loop)
+            let extra = min(3, state.endlessLoop)
+            for _ in 0..<extra {
+                let type = EnemyType.allCases.randomElement() ?? .biz
+                spawns.insert((type: type, elite: false), at: max(0, spawns.count - 1))
+            }
+        }
+        state.pendingSpawns = spawns
+        let count = spawns.count
         state.waveEnemiesLeft = count
         state.spawnQueue = count
         state.spawnTimer = 0.35
-        state.waveHpScale = def.hpScale
-        state.waveTelegraphMul = def.telegraphMul
+        state.waveHpScale = hpScale
+        state.waveTelegraphMul = telegraphMul
         state.message = def.banner
-        state.messageSubtitle = def.subtitle
+        state.messageSubtitle = state.playMode == .endless && state.endlessLoop > 0
+            ? "LAP \(state.endlessLoop + 1) · \(def.subtitle)"
+            : def.subtitle
         state.messageTimer = 1.6
         audio.waveStart(wave)
     }
@@ -467,28 +538,42 @@ final class GameEngine {
         guard let stage = CampaignData.stage(at: state.stageIndex) else { return }
         applyUnlocks(stage.unlocksOnClear)
         flushInput()
-        if stage.isFinale {
-            state.phase = .victory
-            beginSmokeBreak("STREET CLEARED", duration: 99)
-            state.player.anim = .victory
-            state.player.animTime = 0
-            state.player.animFrame = 0
-            audio.victory()
+        if stage.isFinale && state.playMode == .story {
+            finishCampaign()
             return
         }
         state.phase = .stageClear
         state.zineText = stage.zineLines.joined(separator: "\n")
-        let title = state.unlockFlags.contains(.hasGun) && stage.unlocksOnClear.contains(.hasGun)
-            ? "PACKIN' HEAT — CONTINUE"
-            : "STAGE CLEAR — CONTINUE"
+        let title: String
+        if state.playMode == .endless && stage.isFinale {
+            title = "LAP \(state.endlessLoop + 1) CLEARED — CONTINUE"
+        } else if state.unlockFlags.contains(.hasGun) && stage.unlocksOnClear.contains(.hasGun) {
+            title = "PACKIN' HEAT — CONTINUE"
+        } else {
+            title = "STAGE CLEAR — CONTINUE"
+        }
         beginSmokeBreak(title, duration: 99)
         state.messageSubtitle = stage.zineLines.first ?? ""
         audio.waveClear()
     }
 
+    /// Next stage index. Story walks the campaign; Endless walks its shuffled order and reshuffles
+    /// into a harder lap when it runs out.
+    private func nextStageIndex() -> Int {
+        guard state.playMode == .endless else { return state.stageIndex + 1 }
+        if state.endlessOrder.isEmpty { state.endlessOrder = Self.shuffledEndlessOrder() }
+        state.endlessCursor += 1
+        if state.endlessCursor >= state.endlessOrder.count {
+            state.endlessLoop += 1
+            state.endlessOrder = Self.shuffledEndlessOrder()
+            state.endlessCursor = 0
+        }
+        return state.endlessOrder.indices.contains(state.endlessCursor) ? state.endlessOrder[state.endlessCursor] : 0
+    }
+
     private func advanceStage() {
         flushInput()
-        let next = state.stageIndex + 1
+        let next = nextStageIndex()
         state.zineText = ""
         state.messageSubtitle = ""
         state.player.anim = .idle
@@ -498,13 +583,17 @@ final class GameEngine {
         state.pendingStageIndex = next
         state.loadingTimer = 1.85
         if let stage = CampaignData.stage(at: next) {
-            state.stageName = stage.name
-            state.message = stage.name.uppercased()
+            state.stageName = stage.displayTitle
+            state.message = stage.displayTitle.uppercased()
+            state.messageSubtitle = state.playMode == .endless
+                ? "LAP \(state.endlessLoop + 1) · \(stage.subtitle)"
+                : stage.subtitle
         } else {
             state.message = "NEXT STREET"
         }
         state.messageTimer = 2.0
         state.phase = .loading
+        audio.stageLoad()
     }
 
     /// Finish the between-stage hold and enter the pending stage (or victory if none).
@@ -521,8 +610,9 @@ final class GameEngine {
 
     private func applyUnlocks(_ flags: [UnlockFlag]) {
         for flag in flags {
+            let fresh = !state.unlockFlags.contains(flag)
             state.unlockFlags.insert(flag)
-            if flag == .hasGun {
+            if flag == .hasGun && fresh && !state.hasGun {
                 state.hasGun = true
                 state.message = "GUN UNLOCKED — PACKIN' HEAT"
                 state.messageTimer = 2.2
@@ -601,47 +691,92 @@ final class GameEngine {
 
     // MARK: - Attacks
 
-    private func startAttack(_ kind: AttackKind, on index: FighterIndex) {
+    private func startAttack(_ move: MoveDef, on index: FighterIndex) {
         switch index {
         case .player:
             mutatePlayer { f in
-                applyStartAttack(&f, kind: kind, isPlayer: true)
+                applyStartAttack(&f, move: move, isPlayer: true)
             }
-            if kind == .special {
+            if move.kind == .special {
                 spawnPunkBubble()
             }
         case .enemy(let i):
             guard state.enemies.indices.contains(i) else { return }
-            applyStartAttack(&state.enemies[i], kind: kind, isPlayer: false)
+            applyStartAttack(&state.enemies[i], move: move, isPlayer: false)
         }
     }
 
-    private func applyStartAttack(_ f: inout Fighter, kind: AttackKind, isPlayer: Bool) {
-        f.attackKind = kind
-        f.attackTimer = attackDuration[kind] ?? 0.4
+    /// The MoveDef a fighter is currently performing (nil when idle).
+    private func currentMove(_ f: Fighter) -> MoveDef? {
+        guard let kind = f.attackKind else { return nil }
+        if f.kind == .enemy { return MoveTable.enemyMove(kind, variant: f.attackVariant) }
+        return MoveTable.move(kind: kind, variant: f.attackVariant, fighter: state.selectedFighter)
+    }
+
+    /// Which move a player input resolves to right now: chain step, air variant or dash punch.
+    private func playerMove(for kind: AttackKind) -> MoveDef {
+        let p = state.player
+        let air = !grounded(p)
+        let fighter = state.selectedFighter
+        switch kind {
+        case .punch:
+            if air { return MoveTable.move(kind: .punch, variant: MoveTable.airVariant, fighter: fighter) }
+            if p.anim == .run, abs(p.vx) > playerSpeed * 1.1 {
+                return MoveTable.move(kind: .punch, variant: MoveTable.dashVariant, fighter: fighter)
+            }
+        case .kick:
+            if air { return MoveTable.move(kind: .kick, variant: MoveTable.airVariant, fighter: fighter) }
+        case .special, .gun:
+            return MoveTable.move(kind: kind, variant: 0, fighter: fighter)
+        }
+        // Grounded chain: continue from the step we just finished if still inside the grace.
+        var variant = 0
+        if p.chainTimer > 0, p.chainKind == kind, p.attackVariant < MoveTable.airVariant {
+            let last = MoveTable.base(kind: kind, variant: p.attackVariant)
+            if let next = MoveTable.nextInChain(after: last) { variant = next.variant }
+        }
+        return MoveTable.move(kind: kind, variant: variant, fighter: fighter)
+    }
+
+    private func applyStartAttack(_ f: inout Fighter, move: MoveDef, isPlayer: Bool) {
+        f.attackKind = move.kind
+        f.attackVariant = move.variant
+        f.attackTimer = move.duration
         f.attackActive = false
         f.attackHit = false
         f.specialHitIds = []
+        f.chainTimer = 0
+        f.chainKind = nil
+        f.telegraphTimer = 0
         f.anim = .attack
         f.animTime = 0
         f.animFrame = 0
-        if kind == .special {
+        if move.kind == .special {
             f.vx = 0; f.vy = 0
-            f.invulnTimer = max(f.invulnTimer, (attackDuration[.special] ?? 0.95) * 0.85)
-        } else if kind == .gun {
+            f.invulnTimer = max(f.invulnTimer, move.duration * 0.85)
+        } else if move.kind == .gun {
             f.vy = 0
             f.vx = -f.facing * 40
         } else if grounded(f) {
             f.vy = 0
-            f.vx = f.facing * (kind == .kick ? 220 : 140)
+            f.vx = f.facing * move.lunge
         } else {
             f.vx *= 0.85
         }
-        switch kind {
-        case .kick: audio.kick(player: isPlayer)
-        case .special: audio.special(player: isPlayer)
-        case .gun: audio.gunshot()
-        case .punch: audio.punch(player: isPlayer)
+        if isPlayer {
+            switch move.kind {
+            case .special: audio.riff(fighter: state.selectedFighter)
+            case .gun: audio.gunshot()
+            default: audio.swing(move.sfx, player: true)
+            }
+        } else {
+            // Enemies hold a readable wind-up first; the swing whoosh plays when it releases.
+            if move.variant > 0 {
+                f.telegraphTimer = 0.05
+            } else {
+                f.telegraphTimer = MoveTable.enemyTelegraph * max(0.6, f.telegraphMul)
+                audio.telegraph(elite: f.isElite)
+            }
         }
     }
 
@@ -651,7 +786,7 @@ final class GameEngine {
         state.bullets.append(Bullet(
             x: muzzleX, y: f.y, z: f.z + f.bodyH * f.scale * 0.45,
             vx: f.facing * gunBulletSpeed, facing: f.facing,
-            life: gunBulletLife, damage: gunDamage, hitIds: []
+            life: gunBulletLife, damage: MoveTable.gun.damage, hitIds: []
         ))
         state.particles.append(Particle(
             x: muzzleX, y: muzzleY, vx: f.facing * 20, vy: -10,
@@ -743,6 +878,13 @@ final class GameEngine {
             if state.player.comboTimer <= 0 { state.player.combo = 0 }
         }
         if state.player.flash > 0 { state.player.flash -= dt }
+        if state.player.chainTimer > 0 {
+            state.player.chainTimer -= dt
+            if state.player.chainTimer <= 0 {
+                state.player.chainKind = nil
+                state.player.attackVariant = 0
+            }
+        }
 
         updateAttackPlayer(dt)
 
@@ -810,30 +952,61 @@ final class GameEngine {
 
     private func consumePlayerAction() {
         guard canAttack(state.player) else { return }
-        while !state.actionQueue.isEmpty {
-            let kind = state.actionQueue.removeFirst()
-            if kind == .special {
-                if state.specialMeter < 40 { continue }
-                if !grounded(state.player) { continue }
-                state.specialMeter -= 40
-            }
-            if kind == .gun && !state.hasGun { continue }
-            startAttack(kind, on: .player)
-            return
+        guard let kind = peekRequestedAttack() else { return }
+        consumeRequestedAttack(kind)
+        _ = tryStartPlayerAttack(kind)
+    }
+
+    /// Buffered touch action first (queueAction), then held keyboard buttons.
+    private func peekRequestedAttack() -> AttackKind? {
+        if let k = state.actionQueue.first { return k }
+        if state.hasGun && pressed("gun") { return .gun }
+        if pressed("punch") { return .punch }
+        if pressed("kick") { return .kick }
+        if pressed("special") { return .special }
+        return nil
+    }
+
+    private func consumeRequestedAttack(_ kind: AttackKind) {
+        if state.actionQueue.first == kind {
+            state.actionQueue.removeFirst()
+        } else {
+            state.keys.remove(kind.rawValue)
         }
-        if state.hasGun && pressed("gun") {
-            startAttack(.gun, on: .player)
-            state.keys.remove("gun")
-        } else if pressed("punch") {
-            startAttack(.punch, on: .player)
-            state.keys.remove("punch")
-        } else if pressed("kick") {
-            startAttack(.kick, on: .player)
-            state.keys.remove("kick")
-        } else if grounded(state.player) && pressed("special") && state.specialMeter >= 40 {
+    }
+
+    /// Resource checks (meter / gun) then start. Returns false when the input is dropped.
+    @discardableResult
+    private func tryStartPlayerAttack(_ kind: AttackKind) -> Bool {
+        if kind == .special {
+            guard state.specialMeter >= 40, grounded(state.player) else { return false }
             state.specialMeter -= 40
-            startAttack(.special, on: .player)
-            state.keys.remove("special")
+        }
+        if kind == .gun && !state.hasGun { return false }
+        startAttack(playerMove(for: kind), on: .player)
+        return true
+    }
+
+    /// Inside a move's cancel window: same kind continues the chain (jab → cross → hook), the
+    /// other melee kind starts its own chain (punch-punch-kick strings), riff cancels anything.
+    /// Gun always needs full recovery. Returns the move to cancel into, or nil.
+    private func cancelMove(from current: MoveDef, into next: AttackKind) -> MoveDef? {
+        guard current.kind != .gun, current.kind != .special else { return nil }
+        let fighter = state.selectedFighter
+        let air = !grounded(state.player)
+        switch next {
+        case .special:
+            guard !air, state.specialMeter >= 40 else { return nil }
+            return MoveTable.move(kind: .special, variant: 0, fighter: fighter)
+        case .gun:
+            return nil
+        case .punch, .kick:
+            if next == current.kind {
+                guard let step = MoveTable.nextInChain(after: current) else { return nil }
+                return MoveTable.move(kind: next, variant: step.variant, fighter: fighter)
+            }
+            let variant = air ? MoveTable.airVariant : 0
+            return MoveTable.move(kind: next, variant: variant, fighter: fighter)
         }
     }
 
@@ -872,7 +1045,8 @@ final class GameEngine {
                 state.enemies[i].vx = 0
                 state.enemies[i].vy = 0
                 if state.enemies[i].aiCooldown <= 0 {
-                    startAttack(CGFloat.random(in: 0...1) < 0.4 ? .kick : .punch, on: .enemy(i))
+                    let kind: AttackKind = CGFloat.random(in: 0...1) < 0.4 ? .kick : .punch
+                    startAttack(MoveTable.enemyMove(kind), on: .enemy(i))
                     let tele = max(0.8, state.enemies[i].telegraphMul)
                     state.enemies[i].aiCooldown = (0.7 + CGFloat.random(in: 0...0.9)) * tele
                 }
@@ -894,13 +1068,32 @@ final class GameEngine {
 
     // MARK: - Attack update
 
+    /// Non-linear frame curve: anticipation eases in over the first 30% of the frames, the strike
+    /// frames snap through during the active window, and the last quarter holds as recovery.
+    /// Reads as a hit instead of a 4-frame slideshow — and lines the pose up with the hitbox.
+    private func attackFrame(t: CGFloat, move: MoveDef, frames: Int) -> Int {
+        let n = max(1, frames)
+        let lo = move.activeLo, hi = move.activeHi
+        let u: CGFloat
+        if t < lo {
+            let a = lo > 0 ? t / lo : 1
+            u = 0.30 * (a * a)                         // ease-in wind-up
+        } else if t < hi {
+            u = 0.30 + 0.45 * ((t - lo) / max(0.001, hi - lo))
+        } else {
+            u = 0.75 + 0.25 * ((t - hi) / max(0.001, 1 - hi))
+        }
+        return min(n - 1, max(0, Int(floor(u * CGFloat(n)))))
+    }
+
     private func updateAttackPlayer(_ dt: CGFloat) {
-        guard state.player.attackTimer > 0, let kind = state.player.attackKind else { return }
-        let total = attackDuration[kind] ?? 0.4
+        guard state.player.attackTimer > 0, let move = currentMove(state.player) else { return }
+        let kind = move.kind
+        let total = move.duration
         state.player.attackTimer -= dt
         let t = 1 - state.player.attackTimer / total
-        let frames = kind == .special ? max(1, playerSpecialFrames) : 4
-        state.player.animFrame = min(frames - 1, Int(floor(t * CGFloat(frames))))
+        let frames = kind == .special ? max(1, playerSpecialFrames) : max(1, playerAttackFrames)
+        state.player.animFrame = attackFrame(t: t, move: move, frames: frames)
 
         if grounded(state.player) && kind != .special && kind != .gun {
             state.player.vx *= pow(0.02, dt)
@@ -910,8 +1103,7 @@ final class GameEngine {
             state.player.vy = 0
         }
 
-        let window = attackActive[kind] ?? (0.1, 0.3)
-        state.player.attackActive = state.player.attackTimer > 0 && t >= window.0 && t <= window.1
+        state.player.attackActive = state.player.attackTimer > 0 && t >= move.activeLo && t <= move.activeHi
 
         if kind == .gun {
             if state.player.attackActive && !state.player.attackHit {
@@ -919,9 +1111,18 @@ final class GameEngine {
                 state.player.attackHit = true
             }
         } else if kind == .special && state.player.attackActive {
-            handleRiff(t: t, dt: dt, total: total)
-        } else if state.player.attackActive && !state.player.attackHit && kind != .special {
-            handleMeleeHit(attackerIsPlayer: true, kind: kind, attackerFacing: state.player.facing)
+            handleRiff(t: t, dt: dt, total: total, move: move)
+        } else if state.player.attackActive && !state.player.attackHit {
+            handleMeleeHit(attackerIsPlayer: true, move: move, attackerFacing: state.player.facing)
+        }
+
+        // Cancel window: buffered input past `chainWindow` cuts the recovery short.
+        if state.player.attackTimer > 0, t >= move.chainWindow, !state.player.dead,
+           let next = peekRequestedAttack(), let into = cancelMove(from: move, into: next) {
+            consumeRequestedAttack(next)
+            if into.kind == .special { state.specialMeter -= 40 }
+            startAttack(into, on: .player)
+            return
         }
 
         if state.player.attackTimer <= 0 {
@@ -931,24 +1132,49 @@ final class GameEngine {
             state.player.anim = grounded(state.player) ? .idle : .jump
             state.player.animTime = 0
             if grounded(state.player) { state.player.vx = 0 }
+            // Keep the chain alive briefly so a slightly late press still gets the next step.
+            if move.chainGrace > 0 {
+                state.player.chainTimer = move.chainGrace
+                state.player.chainKind = move.kind
+            } else {
+                state.player.chainTimer = 0
+                state.player.chainKind = nil
+                state.player.attackVariant = 0
+            }
         }
     }
 
     private func updateAttackEnemy(_ i: Int, dt: CGFloat) {
         guard state.enemies.indices.contains(i) else { return }
-        guard state.enemies[i].attackTimer > 0, let kind = state.enemies[i].attackKind else { return }
-        let total = attackDuration[kind] ?? 0.4
+        guard state.enemies[i].attackTimer > 0, let move = currentMove(state.enemies[i]) else { return }
+
+        // Telegraph hold: wind-up frame, planted, no hitbox — the player's window to react.
+        if state.enemies[i].telegraphTimer > 0 {
+            state.enemies[i].telegraphTimer -= dt
+            state.enemies[i].animFrame = 0
+            state.enemies[i].vx = 0
+            state.enemies[i].vy = 0
+            if state.enemies[i].telegraphTimer <= 0 {
+                state.enemies[i].telegraphTimer = 0
+                if grounded(state.enemies[i]) {
+                    state.enemies[i].vx = state.enemies[i].facing * move.lunge
+                }
+                audio.swing(move.sfx, player: false)
+            }
+            return
+        }
+
+        let total = move.duration
         state.enemies[i].attackTimer -= dt
         let t = 1 - state.enemies[i].attackTimer / total
-        state.enemies[i].animFrame = min(3, Int(floor(t * 4)))
+        state.enemies[i].animFrame = attackFrame(t: t, move: move, frames: 4)
         if grounded(state.enemies[i]) {
             state.enemies[i].vx *= pow(0.02, dt)
         }
-        let window = attackActive[kind] ?? (0.1, 0.3)
-        state.enemies[i].attackActive = state.enemies[i].attackTimer > 0 && t >= window.0 && t <= window.1
+        state.enemies[i].attackActive = state.enemies[i].attackTimer > 0 && t >= move.activeLo && t <= move.activeHi
 
-        if state.enemies[i].attackActive && !state.enemies[i].attackHit && kind != .special {
-            handleMeleeHit(attackerIsPlayer: false, kind: kind, attackerFacing: state.enemies[i].facing, enemyIndex: i)
+        if state.enemies[i].attackActive && !state.enemies[i].attackHit {
+            handleMeleeHit(attackerIsPlayer: false, move: move, attackerFacing: state.enemies[i].facing, enemyIndex: i)
         }
 
         if state.enemies[i].attackTimer <= 0 {
@@ -957,10 +1183,15 @@ final class GameEngine {
             state.enemies[i].anim = .idle
             state.enemies[i].animTime = 0
             if grounded(state.enemies[i]) { state.enemies[i].vx = 0 }
+            // Suits throw a quick one-two: the follow-up jab has almost no wind-up.
+            if state.enemies[i].enemyType == .biz, move.kind == .punch, move.variant == 0,
+               !state.player.dead, CGFloat.random(in: 0...1) < 0.55 {
+                startAttack(MoveTable.enemyMove(.punch, variant: 1), on: .enemy(i))
+            }
         }
     }
 
-    private func handleRiff(t: CGFloat, dt: CGFloat, total: CGFloat) {
+    private func handleRiff(t: CGFloat, dt: CGFloat, total: CGFloat, move: MoveDef) {
         let u = max(0, min(1, (t - 0.15) / 0.7))
         let radius = riffRadiusMin + (riffRadiusMax - riffRadiusMin) * u
         let pulseMarks: [CGFloat] = [0.22, 0.4, 0.58, 0.75]
@@ -978,7 +1209,7 @@ final class GameEngine {
             if state.player.specialHitIds.contains(state.enemies[ei].id) { continue }
             if !inRiffRange(attacker: state.player, target: state.enemies[ei], radius: radius) { continue }
             if applyHit(attackerIsPlayer: true, victimIsPlayer: false, victimIndex: ei,
-                        damage: riffDamage, knock: riffKnock, kind: .special) {
+                        damage: move.damage, knock: move.knockback, move: move) {
                 state.player.specialHitIds.append(state.enemies[ei].id)
             }
         }
@@ -990,7 +1221,7 @@ final class GameEngine {
         return hypot(dx, dy) <= radius && abs(attacker.z - target.z) < 80
     }
 
-    private func handleMeleeHit(attackerIsPlayer: Bool, kind: AttackKind, attackerFacing: CGFloat, enemyIndex: Int? = nil) {
+    private func handleMeleeHit(attackerIsPlayer: Bool, move: MoveDef, attackerFacing: CGFloat, enemyIndex: Int? = nil) {
         let attacker: Fighter
         if attackerIsPlayer {
             attacker = state.player
@@ -998,21 +1229,22 @@ final class GameEngine {
             guard let ei = enemyIndex, state.enemies.indices.contains(ei) else { return }
             attacker = state.enemies[ei]
         }
-        let depthTol: CGFloat = kind == .kick ? 40 : 32
-        let airBonus: CGFloat = (!grounded(attacker) && kind == .kick) ? 6 : 0
-        let dmg: CGFloat = (kind == .kick ? 18 : 11) + airBonus
-        let knock: CGFloat = kind == .kick ? 220 : 140
+        let depthTol = move.depthTol
+        let dmg = move.damage
+        let knock = move.knockback
 
         // Attack boxes scale with fighter size so sprites and collisions line up.
         let s = max(1, attacker.scale)
-        let reach: CGFloat = (kind == .kick ? 52 : 40) * s
-        let h: CGFloat = (kind == .kick ? 30 : 28) * s
-        let yOff: CGFloat = (kind == .kick ? 36 : 30) * s
+        let reach = move.reach * s
+        let h = move.hitHeight * s
+        let yOff = move.hitYOff * s
         let forward: CGFloat = 8 * s
         let abX = attackerFacing == 1 ? attacker.x + forward : attacker.x - forward - reach
         let abY = attacker.y - yOff - h / 2 - attacker.z
 
         if attackerIsPlayer {
+            // Finishers and the dash sweep everyone in the box; single steps stop at the first hit.
+            let multi = move.knocksDown
             for ei in state.enemies.indices {
                 if state.enemies[ei].dead { continue }
                 if abs(attacker.y - state.enemies[ei].y) > depthTol { continue }
@@ -1020,8 +1252,9 @@ final class GameEngine {
                 let bb = bodyBox(state.enemies[ei])
                 if abX < bb.x + bb.w && abX + reach > bb.x && abY < bb.y + bb.h && abY + h > bb.y {
                     if applyHit(attackerIsPlayer: true, victimIsPlayer: false, victimIndex: ei,
-                                damage: dmg, knock: knock, kind: kind) {
+                                damage: dmg, knock: knock, move: move) {
                         state.player.attackHit = true
+                        if !multi { break }
                     }
                 }
             }
@@ -1032,7 +1265,7 @@ final class GameEngine {
             let bb = bodyBox(state.player)
             if abX < bb.x + bb.w && abX + reach > bb.x && abY < bb.y + bb.h && abY + h > bb.y {
                 if applyHit(attackerIsPlayer: false, victimIsPlayer: true, victimIndex: enemyIndex,
-                            damage: dmg, knock: knock, kind: kind) {
+                            damage: dmg, knock: knock, move: move) {
                     if let ei = enemyIndex { state.enemies[ei].attackHit = true }
                 }
             }
@@ -1053,8 +1286,9 @@ final class GameEngine {
         victimIndex: Int?,
         damage: CGFloat,
         knock: CGFloat,
-        kind: AttackKind
+        move: MoveDef
     ) -> Bool {
+        let kind = move.kind
         if victimIsPlayer {
             guard !state.player.dead, state.player.invulnTimer <= 0 else { return false }
             let attackerFacing: CGFloat
@@ -1070,15 +1304,16 @@ final class GameEngine {
                 attackerX = state.enemies[ei].x
                 attackerY = state.enemies[ei].y
             }
-            applyHitTo(&state.player, damage: damage, knock: knock, kind: kind,
+            applyHitTo(&state.player, damage: damage, knock: knock, move: move,
                        attackerIsPlayer: attackerIsPlayer, attackerFacing: attackerFacing,
                        attackerX: attackerX, attackerY: attackerY)
-            audio.hit(kind, combo: 1)
+            audio.impact(move.sfx, combo: 1)
             audio.hurt()
+            if move.knocksDown { audio.knockdown() }
             if state.player.hp <= 0 {
                 state.player.dead = true
                 state.player.deathTimer = 0.9
-                state.player.anim = .hurt
+                state.player.anim = .knockdown
                 audio.playerDown()
             }
             return true
@@ -1086,13 +1321,14 @@ final class GameEngine {
             guard let ei = victimIndex, state.enemies.indices.contains(ei) else { return false }
             guard !state.enemies[ei].dead, state.enemies[ei].invulnTimer <= 0 else { return false }
             let attacker = state.player
-            applyHitTo(&state.enemies[ei], damage: damage, knock: knock, kind: kind,
+            applyHitTo(&state.enemies[ei], damage: damage, knock: knock, move: move,
                        attackerIsPlayer: true, attackerFacing: attacker.facing,
                        attackerX: attacker.x, attackerY: attacker.y)
 
             state.player.combo += 1
             state.player.comboTimer = comboWindow
-            state.score += Int(damage) * 10 + max(0, state.player.combo - 1) * 15
+            let scoreMul = state.endlessScoreMultiplier
+            state.score += Int((CGFloat(Int(damage) * 10 + max(0, state.player.combo - 1) * 15) * scoreMul).rounded())
             if kind != .special {
                 state.specialMeter = min(100, state.specialMeter + damage * 1.8)
             }
@@ -1105,6 +1341,9 @@ final class GameEngine {
             } else if kind == .gun {
                 label = "BANG \(Int(damage))"
                 color = "#ffe566"
+            } else if move.knocksDown {
+                label = state.player.combo > 1 ? "\(Int(damage))!! x\(state.player.combo)" : "\(Int(damage))!!"
+                color = "#ff9f43"
             } else if state.player.combo > 1 {
                 label = "\(Int(damage))! x\(state.player.combo)"
                 color = state.player.combo > 3 ? "#ffd56a" : "#fff"
@@ -1117,24 +1356,32 @@ final class GameEngine {
                       text: label,
                       color: color)
             spawnImpact(x: state.enemies[ei].x, y: state.enemies[ei].y - state.enemies[ei].bodyH * 0.5)
-            state.shake = min(10, state.shake + (kind == .special ? 2 : (kind == .gun ? 5 : 4)))
-            if kind == .gun {
-                state.hitStop = max(state.hitStop, 0.04)
-            } else if kind != .special {
-                state.hitStop = kind == .kick ? 0.06 : 0.045
+            state.shake = min(12, state.shake + move.shake)
+            if move.hitStop > 0 {
+                state.hitStop = max(state.hitStop, move.hitStop)
             }
-            // Treat gun hits as heavy for impact SFX
-            audio.hit(kind == .gun ? .kick : kind, combo: state.player.combo)
+            audio.impact(move.sfx, combo: state.player.combo)
+            if move.knocksDown {
+                audio.knockdown()
+                if kind != .special && kind != .gun { audio.chainFinisher() }
+            }
+            if comboMilestones.contains(state.player.combo) {
+                audio.comboMilestone(state.player.combo)
+                floatText(x: state.player.x, y: state.player.y - state.player.bodyH * state.player.scale - 24,
+                          text: "\(state.player.combo) HIT COMBO", color: "#ffd56a")
+            }
 
             if state.enemies[ei].hp <= 0 {
                 state.enemies[ei].dead = true
                 state.enemies[ei].deathTimer = 0.9
-                state.enemies[ei].anim = .hurt
-                state.score += state.enemies[ei].scoreValue
+                state.enemies[ei].anim = .knockdown
+                state.enemies[ei].knockedDown = true
+                let bounty = Int((CGFloat(state.enemies[ei].scoreValue) * scoreMul).rounded())
+                state.score += bounty
                 state.waveEnemiesLeft = max(0, state.waveEnemiesLeft - 1)
                 floatText(x: state.enemies[ei].x,
                           y: state.enemies[ei].y - state.enemies[ei].bodyH - 28,
-                          text: "+\(state.enemies[ei].scoreValue)",
+                          text: "+\(bounty)",
                           color: "#2de2e6")
                 audio.ko()
                 // Last foe of the wave dropped by a gunshot
@@ -1153,21 +1400,39 @@ final class GameEngine {
         _ victim: inout Fighter,
         damage: CGFloat,
         knock: CGFloat,
-        kind: AttackKind,
+        move: MoveDef,
         attackerIsPlayer: Bool,
         attackerFacing: CGFloat,
         attackerX: CGFloat,
         attackerY: CGFloat
     ) {
+        let kind = move.kind
         victim.hp = max(0, victim.hp - damage)
-        victim.hurtTimer = hurtDuration
-        victim.invulnTimer = invulnAfterHit
-        victim.anim = .hurt
-        victim.animTime = 0
-        victim.animFrame = 0
         victim.attackTimer = 0
         victim.attackActive = false
+        victim.attackKind = nil
+        victim.telegraphTimer = 0
+        // Getting hit breaks any chain in progress.
+        victim.chainTimer = 0
+        victim.chainKind = nil
+        victim.attackVariant = 0
+        victim.animTime = 0
+        victim.animFrame = 0
         victim.flash = 0.12
+        if move.knocksDown {
+            // Floored: long stagger, no juggling while down, lofted fall.
+            victim.knockedDown = true
+            victim.hurtTimer = MoveTable.knockdownDuration
+            victim.invulnTimer = MoveTable.knockdownDuration + 0.1
+            victim.anim = .knockdown
+            victim.zVel = max(victim.zVel, 240)
+            victim.z = max(victim.z, 1)
+        } else {
+            victim.knockedDown = false
+            victim.hurtTimer = hurtDuration
+            victim.invulnTimer = invulnAfterHit
+            victim.anim = .hurt
+        }
         if kind == .special {
             var dirX = victim.x - attackerX
             var dirY = victim.y - attackerY
@@ -1191,16 +1456,25 @@ final class GameEngine {
 
     private func updateFighterAnim(_ f: inout Fighter, dt: CGFloat, moving: Bool, walkFrames: Int, walkFps: CGFloat) {
         if f.dead {
-            f.anim = .hurt
+            // Deaths read as a fall: knockdown sheet when packed, else the hurt atlas.
+            f.anim = .knockdown
             f.animFrame = min(3, Int(floor((1 - f.deathTimer / 0.9) * 4)))
             return
         }
         if f.hurtTimer > 0 {
-            f.anim = .hurt
             f.animTime += dt
-            f.animFrame = min(3, Int(floor((1 - f.hurtTimer / hurtDuration) * 4)))
+            if f.knockedDown {
+                f.anim = .knockdown
+                // Fall fast, then lie there: frames 0-2 in the first half, hold 3 until up.
+                let u = 1 - f.hurtTimer / MoveTable.knockdownDuration
+                f.animFrame = u < 0.14 ? 0 : (u < 0.28 ? 1 : (u < 0.45 ? 2 : 3))
+            } else {
+                f.anim = .hurt
+                f.animFrame = min(3, Int(floor((1 - f.hurtTimer / hurtDuration) * 4)))
+            }
             return
         }
+        f.knockedDown = false
         if f.attackTimer > 0 { return }
         if !grounded(f) {
             f.anim = .jump
@@ -1215,11 +1489,17 @@ final class GameEngine {
             f.anim = sprint ? .run : .walk
             f.animTime += dt
             let fps = sprint ? playerRunFps : walkFps
-            let frameCount = sprint ? playerRunFrames : walkFrames
-            f.animFrame = Int(floor(f.animTime * fps)) % max(1, frameCount)
+            let frameCount = max(1, sprint ? playerRunFrames : walkFrames)
+            f.animFrame = Int(floor(f.animTime * fps)) % frameCount
+            // Footstep on each foot plant (two per cycle), never re-triggered by a held frame.
+            if f.kind == .player, f.animFrame != f.lastStepFrame, f.animFrame % max(1, frameCount / 2) == 0 {
+                f.lastStepFrame = f.animFrame
+                audio.footstep(run: sprint)
+            }
         } else {
             f.anim = .idle
             f.animTime += dt
+            f.lastStepFrame = -1
             let holds = f.kind == .player ? playerIdleHolds : enemyIdleHolds
             f.animFrame = idleHoldFrame(time: f.animTime, holds: holds)
         }
@@ -1284,11 +1564,15 @@ final class GameEngine {
                     victimIsPlayer: false,
                     victimIndex: ei,
                     damage: b.damage,
-                    knock: 260,
-                    kind: .gun
+                    knock: MoveTable.gun.knockback,
+                    move: MoveTable.gun
                 )
                 break
             }
+        }
+        // Rounds that time out or leave the stage ricochet off into the night.
+        for b in state.bullets where b.hitIds.isEmpty {
+            if b.life <= 0 || b.x <= -40 || b.x >= stageWidth + 40 { audio.bulletMiss() }
         }
         state.bullets = state.bullets.filter {
             $0.life > 0 && $0.x > -40 && $0.x < stageWidth + 40
@@ -1361,6 +1645,7 @@ final class GameEngine {
         state.enemies.append(
             makeEnemy(x: clampedX, y: y, wave: state.wave, type: spawn.type, elite: spawn.elite)
         )
+        audio.enemySpawn(elite: spawn.elite)
     }
 
     private func updateParticles(_ dt: CGFloat) {
