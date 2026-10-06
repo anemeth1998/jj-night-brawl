@@ -398,11 +398,11 @@ struct FighterCard: View {
                             )
                     }
                 }
-                .frame(width: 80, height: 100)
+                .frame(width: 70, height: 88)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .saturation(locked ? 0 : 1)
                 Text(title)
-                    .font(MenuTheme.display(13, weight: .bold))
+                    .font(MenuTheme.display(11, weight: .bold))
                     .tracking(0.8)
                     .foregroundColor(selected ? MenuTheme.pink : .white)
                 if let subtitle {
@@ -412,8 +412,8 @@ struct FighterCard: View {
                         .lineLimit(1)
                 }
             }
-            .frame(minWidth: 84, minHeight: 130)
-            .padding(6)
+            .frame(minWidth: 74, minHeight: 118)
+            .padding(4)
             .background(
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color.white.opacity(pressed ? 0.16 : (selected ? 0.14 : 0.08)))

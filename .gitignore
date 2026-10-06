@@ -46,5 +46,8 @@ __pycache__/
 # Icon install scratch (keep scripts, not status noise)
 icon_install_status.txt
 
-# Local helper binaries
-tools/
+# Local helper binaries — but keep the clip → sprite-sheet pipeline scripts versioned
+tools/*
+!tools/README.md
+!tools/*.py
+!tools/*.swift

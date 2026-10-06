@@ -16,6 +16,7 @@ struct CreditsPanel: View {
             cast("JJ", "pink / black hair punk. can + cig. doesn't sell the door.")
             cast("ANDREW", "red / black striped hoodie, freckles. hoodie + laptop. root access.")
             cast("HAN", "grey cat-ear beanie, blonde / orange tips. beanie + phone. night shift.")
+            cast("KAT", "jet black bangs, grommet crop, white fishnets. goth-alt. no encores.")
 
             Text("Suits and scene-vultures bought the scene. JJ resists both.\nBootleg zine taped to a brick wall — not Settings.app.")
                 .font(.system(size: 10.5, weight: .medium))

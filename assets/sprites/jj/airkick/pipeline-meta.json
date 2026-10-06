@@ -1,0 +1,23 @@
+{
+  "mode": "airkick",
+  "rows": 2,
+  "cols": 2,
+  "cell_size": 128,
+  "cell_w": 128,
+  "frame_labels": [
+    "airkick-1",
+    "airkick-2",
+    "airkick-3",
+    "airkick-4"
+  ],
+  "source": "../../../Desktop/jj-kick/video-loops/jump",
+  "picked_frames": [
+    "jump_12.png",
+    "jump_14.png",
+    "jump_16.png",
+    "jump_18.png"
+  ],
+  "ref_frame": "jump_01.png",
+  "scale": 1.1739,
+  "anchor": "first"
+}

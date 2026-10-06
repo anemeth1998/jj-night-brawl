@@ -1,0 +1,31 @@
+{
+  "mode": "kick1",
+  "rows": 2,
+  "cols": 4,
+  "cell_size": 128,
+  "cell_w": 128,
+  "frame_labels": [
+    "kick1-1",
+    "kick1-2",
+    "kick1-3",
+    "kick1-4",
+    "kick1-5",
+    "kick1-6",
+    "kick1-7",
+    "kick1-8"
+  ],
+  "source": "../../../Desktop/andrew-kick/video-loops/snap",
+  "picked_frames": [
+    "snap_03.png",
+    "snap_06.png",
+    "snap_08.png",
+    "snap_10.png",
+    "snap_13.png",
+    "snap_16.png",
+    "snap_18.png",
+    "snap_21.png"
+  ],
+  "ref_frame": "snap_01.png",
+  "scale": 0.9231,
+  "anchor": "first"
+}

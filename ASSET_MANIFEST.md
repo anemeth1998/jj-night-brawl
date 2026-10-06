@@ -31,6 +31,7 @@ Unpack to `assets/art-drops/` then commit (see that folder’s README).
 | `characters/jj/` | 22 | JJ (pink/black hair punk) |
 | `characters/andrew/` | 13 | Andrew (striped hoodie) |
 | `characters/han/` | 14 | Han (cat beanie) |
+| `characters/kat/` | stills + combat sheets | Kat (goth-alt, white fishnets) |
 | `characters/group/` | 2 | Trio shots |
 | `cutscenes/` | 5 | Story stills |
 
