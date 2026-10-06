@@ -502,12 +502,13 @@ final class GameAudio {
         noise(0.05, gain: 0.06, freq: 2600, highpass: true)
     }
 
-    /// Per-fighter riff: JJ = punk guitar, Andrew = 8-bit glitch, Han = anime chime run.
+    /// Per-fighter riff: JJ = punk guitar, Andrew = 8-bit glitch, Han = anime chime, Kat = low dusk synth.
     func riff(fighter: String) {
         whoosh(kind: .special, vol: 1)
         switch fighter.lowercased() {
         case "andrew": glitchRiff()
         case "han": chimeRiff()
+        case "kat": duskRiff()
         default: guitarRiff()
         }
     }
@@ -545,6 +546,23 @@ final class GameAudio {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.66) { [weak self] in
             self?.tone(1568, dur: 0.3, type: .sine, gain: 0.06, slideTo: 1760)
             self?.noise(0.2, gain: 0.05, freq: 5000, highpass: true)
+        }
+    }
+
+    /// Kat: minor bass pulse, a fifth above, then a drop. No guitar, no chiptune, no chime.
+    private func duskRiff() {
+        let notes: [(CGFloat, Double, CGFloat)] = [
+            (98, 0, 0.16), (147, 0.14, 0.14), (196, 0.28, 0.12),
+            (165, 0.42, 0.12), (131, 0.56, 0.18)
+        ]
+        for (f, delay, hold) in notes {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                self?.tone(f, dur: hold, type: .triangle, gain: 0.10)
+                self?.tone(f / 2, dur: hold, type: .square, gain: 0.04)
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.74) { [weak self] in
+            self?.tone(73, dur: 0.28, type: .sawtooth, gain: 0.06, slideTo: 55)
         }
     }
 

@@ -88,6 +88,16 @@ final class GameEngine {
         "TOUCH ME I'M SUDO!", "EVEN FLOW, NO FLOW CONTROL!",
         "HERE WE ARE NOW, DEPLOY US!"
     ]
+    /// Kat's riff bubbles — dry goth, short. Keep under ~30 chars.
+    private let katSlogans = [
+        "CRY HARDER.", "BLACK LIPSTICK.", "FISHNETS WIN.",
+        "SIT DOWN.", "NOT YOUR SCENE.", "BOOTS FIRST.",
+        "COLD SHOULDER.", "I DON'T DO ENCORES.", "STUDS OUT.",
+        "SMILE. NO.", "YOU BLINKED.", "ZIP IT.",
+        "GOTH, NOT GHOST.", "DENIM AND DAMAGE.", "STAY DOWN.",
+        "PURPLE HAZE, PURPLE BRUISE.", "CRESCENT, CLOSED FIST.",
+        "PLATFORM SOLES.", "NIGHT OWES YOU NOTHING."
+    ]
     /// Han's riff bubbles — Danganronpa / Yuri on Ice / otaku / night-shift nurse / cat beanie.
     /// Keep under ~30 chars so the bubble wraps to two lines at most.
     private let hanSlogans = [
@@ -809,6 +819,8 @@ final class GameEngine {
             slogan = hanSlogans.randomElement() ?? "NANI?!"
         case "andrew":
             slogan = andrewSlogans.randomElement() ?? "SEGFAULT!"
+        case "kat":
+            slogan = katSlogans.randomElement() ?? "CRY HARDER."
         default:
             slogan = punkSlogans.randomElement() ?? "FUCK YEAH!"
         }

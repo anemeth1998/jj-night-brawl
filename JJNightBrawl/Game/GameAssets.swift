@@ -201,6 +201,19 @@ final class GameAssets: @unchecked Sendable {
     private(set) var hanJump: SpriteSheet?
     private(set) var hanSpecial: SpriteSheet?
 
+    /// Endless roster atlases (andrew, han, kat). A missing anim falls back inside this pack.
+    private struct RosterAtlas {
+        var idle: SpriteSheet?
+        var walk: SpriteSheet?
+        var run: SpriteSheet?
+        var attack: SpriteSheet?
+        var kick: SpriteSheet?
+        var hurt: SpriteSheet?
+        var jump: SpriteSheet?
+        var special: SpriteSheet?
+    }
+    private var roster: [String: RosterAtlas] = [:]
+
     private var enemySheets: [String: SpriteSheet] = [:]
     /// Moveset sheets keyed `<fighter>_<sheetKey>` (jj_punch1, han_kick2, andrew_knockdown …).
     /// All optional: `sheetForPlayer` degrades to the base attack / kick / hurt atlas.
@@ -249,7 +262,7 @@ final class GameAssets: @unchecked Sendable {
             }
         }
         var moves: [String: SpriteSheet] = [:]
-        for who in ["jj", "andrew", "han"] {
+        for who in ["jj", "andrew", "han", "kat"] {
             for key in Self.moveSheetKeys {
                 if let s = optAuto("\(who)_\(key)") {
                     moves["\(who)_\(key)"] = s
@@ -281,6 +294,31 @@ final class GameAssets: @unchecked Sendable {
         let andrewSpecialSheet = opt("andrew_special", 2, 2, stripChroma: stripChroma)
         let hanJumpSheet = opt("han_jump", 2, 2, stripChroma: stripChroma)
         let hanSpecialSheet = opt("han_special", 2, 2, stripChroma: stripChroma)
+        // Kat: 2×2 keyed sheets from the combat drop. Grid inferred from the PNG.
+        let katIdleSheet = optAuto("kat_idle")
+        let katWalkSheet = optAuto("kat_walk")
+        let katRunSheet = optAuto("kat_run")
+        let katAttackSheet = optAuto("kat_attack")
+        let katKickSheet = optAuto("kat_kick")
+        let katHurtSheet = optAuto("kat_hurt")
+        let katJumpSheet = optAuto("kat_jump")
+        let rosterPacks: [String: RosterAtlas] = [
+            "andrew": RosterAtlas(
+                idle: andrewIdleSheet, walk: andrewWalkSheet, run: nil,
+                attack: andrewAttackSheet, kick: andrewKickSheet, hurt: andrewHurtSheet,
+                jump: andrewJumpSheet, special: andrewSpecialSheet
+            ),
+            "han": RosterAtlas(
+                idle: hanIdleSheet, walk: hanWalkSheet, run: nil,
+                attack: hanAttackSheet, kick: hanKickSheet, hurt: hanHurtSheet,
+                jump: hanJumpSheet, special: hanSpecialSheet
+            ),
+            "kat": RosterAtlas(
+                idle: katIdleSheet, walk: katWalkSheet, run: katRunSheet,
+                attack: katAttackSheet, kick: katKickSheet, hurt: katHurtSheet,
+                jump: katJumpSheet, special: nil
+            ),
+        ]
 
         let isReady = idle != nil && walk != nil
         print("[JJ] assets load stripChroma=\(stripChroma) ready=\(isReady) idle=\(idle != nil) walk=\(walk != nil) title=\(titleImg != nil) enemies=\(enemies.count) dt=\(String(format: "%.3f", CFAbsoluteTimeGetCurrent() - t0))s")
@@ -316,6 +354,7 @@ final class GameAssets: @unchecked Sendable {
             self.andrewSpecial = andrewSpecialSheet
             self.hanJump = hanJumpSheet
             self.hanSpecial = hanSpecialSheet
+            self.roster = rosterPacks
             self.enemySheets = enemies
             self.moveSheets = moves
             self.impact = impactSheet
@@ -763,25 +802,26 @@ final class GameAssets: @unchecked Sendable {
 
         // Endless fighters: every anim resolves within that fighter's own sheets so a missing
         // atlas degrades to their idle pose, never to a JJ sprite swap mid-move.
-        if id == "andrew" || id == "han" {
-            let isAndrew = id == "andrew"
-            let idle = (isAndrew ? andrewIdle : hanIdle) ?? fb
-            let walk = (isAndrew ? andrewWalk : hanWalk) ?? idle
-            let hurt = (isAndrew ? andrewHurt : hanHurt) ?? idle
+        if let pack = roster[id] {
+            let idle = pack.idle ?? fb
+            let walk = pack.walk ?? idle
+            let hurt = pack.hurt ?? idle
             switch anim {
             case .attack:
                 if let v = variantSheet() { return v }
-                if attackKind == .special { return (isAndrew ? andrewSpecial : hanSpecial) ?? idle }
-                if attackKind == .kick { return (isAndrew ? andrewKick : hanKick) ?? idle }
+                if attackKind == .special { return pack.special ?? idle }
+                if attackKind == .kick { return pack.kick ?? idle }
                 // Gun reuses punch pose + drawn pistol overlay
-                return (isAndrew ? andrewAttack : hanAttack) ?? idle
+                return pack.attack ?? idle
             case .hurt:
                 return hurt
             case .knockdown, .dead:
                 return moveSheet(fighter: id, key: "knockdown") ?? hurt
             case .jump:
-                return (isAndrew ? andrewJump : hanJump) ?? idle
-            case .walk, .run:
+                return pack.jump ?? idle
+            case .run:
+                return pack.run ?? walk
+            case .walk:
                 return walk
             case .smoke, .victory, .idle:
                 return idle

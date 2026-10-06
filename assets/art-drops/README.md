@@ -9,6 +9,7 @@
 | `characters/jj/` | **JJ** | Pink/black hair, fishnets, energy can + cig, heavy piercings |
 | `characters/andrew/` | **Andrew** | Brown hair, freckles, red/black striped hoodie, rainbow wristband, checker vans |
 | `characters/han/` | **Han** | Grey cat-ear beanie, blonde/orange hair, quilted jacket, skull tee, black/orange/teal sneakers — **no** rainbow wristband |
+| `characters/kat/` | **Kat** | Jet black bangs, grommet zip crop, white fishnets, studded platform boots |
 | `characters/group/` | Trio | Group portraits |
 | `cutscenes/` | Story stills | Numbered beat plates |
 
@@ -21,5 +22,6 @@ Unpacked from `art-drops-characters-cutscenes-2026-08-12.tar.gz`.
 | `characters/jj/` | 22 / 22 |
 | `characters/andrew/` | 13 / 13 |
 | `characters/han/` | 14 / 14 |
+| `characters/kat/` | stills + 2×2 combat sheets |
 | `characters/group/` | 2 / 2 |
 | `cutscenes/` | 5 / 5 |

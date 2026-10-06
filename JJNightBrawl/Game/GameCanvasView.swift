@@ -406,7 +406,7 @@ final class GameCanvasBridge: ObservableObject {
 
     /// Fighters that can actually start a run. Anything else → `uiDeny` at START BRAWL,
     /// never a silent fallback to JJ.
-    static let playableFighters: Set<String> = ["jj", "andrew", "han"]
+    static let playableFighters: Set<String> = ["jj", "andrew", "han", "kat"]
     static func isPlayable(_ who: String) -> Bool { playableFighters.contains(who.lowercased()) }
 
     /// Title → main menu. Funnels through the canvas so capsule / canvas tap / Return share one door.
@@ -1093,10 +1093,11 @@ struct ContentView: View {
                 .padding(.bottom, 10)
 
             // Each card is a still from that fighter's own hover loop, so tap → loop is continuous.
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 fighterCard("JJ", who: "jj", asset: "select_jj")
                 fighterCard("ANDREW", who: "andrew", asset: "select_andrew")
                 fighterCard("HAN", who: "han", asset: "select_han")
+                fighterCard("KAT", who: "kat", asset: "select_kat")
             }
             .padding(.bottom, 8)
 
@@ -1177,12 +1178,12 @@ struct ContentView: View {
 
 // MARK: - Menu / char-select loops (one visible; JJ's loop is also the menu soundtrack)
 
-/// Four loop layers (JJ video / JJ Endless frames / Andrew / Han). Players / animators are
+/// Loop layers (JJ video / JJ Endless frames / Andrew / Han / Kat still). Players are
 /// created lazily. Only the active id is visible; hover loops pause after a 160ms crossfade.
 /// The JJ slot (`menu-select-loop.mp4`) carries the menu's audio track, so it keeps playing —
-/// hidden — while Andrew / Han are focused and only stops when the stack is dismantled (with a
-/// short fade). At most two AVPlayers play at once (JJ + one hover loop); the Andrew / Han mp4s
-/// have no audio. Image sequences use UIImageView.animationImages (no second CADisplayLink).
+/// hidden — while another fighter is focused and only stops when the stack is dismantled (with a
+/// short fade). At most two AVPlayers play at once (JJ + one hover loop). Kat has no clip yet,
+/// so her slot is the select still. Image sequences use UIImageView.animationImages.
 private final class CharSelectLoopStackView: UIView {
     private struct Slot {
         let id: String
@@ -1228,6 +1229,7 @@ private final class CharSelectLoopStackView: UIView {
             ], false),
             ("andrew", "andrew-hover", "select_andrew", nil, false),
             ("han", "han-hover", "select_han", nil, false),
+            ("kat", nil, "select_kat", nil, false),
         ]
         for (id, res, poster, frames, soundtrack) in specs {
             let posterView = UIImageView()
@@ -1318,7 +1320,8 @@ private final class CharSelectLoopStackView: UIView {
             for s in self.slots {
                 let on = s.id == id
                 let usesFrames = s.frameAssets != nil
-                s.layer.opacity = (on && !usesFrames) ? 1 : 0
+                let hasVideo = s.resource != nil
+                s.layer.opacity = (on && hasVideo && !usesFrames) ? 1 : 0
                 s.animView.alpha = (on && usesFrames) ? 1 : 0
                 // Keep poster under the video; for frame slots the anim view is the surface.
                 s.posterView.alpha = on ? 1 : 0

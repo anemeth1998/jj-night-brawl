@@ -183,7 +183,7 @@ enum MoveTable {
         }
     }
 
-    /// Per-fighter feel: Han is quick and light, Andrew slow and heavy, JJ is the baseline.
+    /// Per-fighter feel: Han is quick and light, Andrew slow and heavy, Kat a touch snappier, JJ is the baseline.
     static func move(kind: AttackKind, variant: Int, fighter: String?) -> MoveDef {
         var m = base(kind: kind, variant: variant)
         guard let fighter, kind == .punch || kind == .kick else { return m }
@@ -196,6 +196,9 @@ enum MoveTable {
             m.duration *= 1.08
             m.damage = (m.damage * 1.15).rounded()
             m.knockback *= 1.1
+        case "kat":
+            m.duration *= 0.94
+            m.lunge *= 1.05
         default:
             break
         }
@@ -715,7 +718,7 @@ final class GameState {
     var actIndex: Int = 1
     var stageIndex: Int = 0
     var stageName: String = ""
-    /// Menu pick: "jj" | "andrew" | "han" (combat sheets still JJ until atlases exist)
+    /// Menu pick: "jj" | "andrew" | "han" | "kat"
     var selectedFighter: String = "jj"
     var playMode: PlayMode = .story
     var zineText: String = ""
